@@ -12,15 +12,71 @@ enum Role {
   ADMIN
 }
 
+enum ProficiencyLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum PriorityLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
 model User {
-  id         String   @id @default(uuid())
-  name       String
-  email      String   @unique
-  password   String
-  department String
-  semester   Int
-  rollNumber String   @unique
-  role       Role     @default(STUDENT)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id            String         @id @default(uuid())
+  name          String
+  email         String         @unique
+  password      String
+  department    String
+  semester      Int
+  rollNumber    String         @unique
+  bio           String?        @default("")
+  role          Role           @default(STUDENT)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  offeredSkills OfferedSkill[]
+  wantedSkills  WantedSkill[]
+}
+
+model Skill {
+  id            String         @id @default(uuid())
+  name          String         @unique
+  category      String
+  description   String?
+  createdAt     DateTime       @default(now())
+
+  offeredBy     OfferedSkill[]
+  wantedBy      WantedSkill[]
+}
+
+model OfferedSkill {
+  id          String           @id @default(uuid())
+  userId      String
+  skillId     String
+  proficiency ProficiencyLevel @default(INTERMEDIATE)
+  description String?
+  createdAt   DateTime         @default(now())
+
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill       Skill            @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, skillId])
+}
+
+model WantedSkill {
+  id        String        @id @default(uuid())
+  userId    String
+  skillId   String
+  priority  PriorityLevel @default(MEDIUM)
+  notes     String?
+  createdAt DateTime      @default(now())
+
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill     Skill         @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, skillId])
 }

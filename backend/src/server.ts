@@ -3,6 +3,9 @@ import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
 import { config } from './config';
 import { authRoutes } from './routes/auth';
+import { skillsRoutes } from './routes/skills';
+import { profileRoutes } from './routes/profile';
+import { studentsRoutes } from './routes/students';
 import { prisma } from './db';
 import './types';
 
@@ -48,6 +51,15 @@ export async function buildApp() {
 
   // Register Auth Routes
   await app.register(authRoutes, { prefix: '/api/auth' });
+
+  // Register Skills Catalog Routes
+  await app.register(skillsRoutes, { prefix: '/api/skills' });
+
+  // Register Student Profile & Skills Management Routes
+  await app.register(profileRoutes, { prefix: '/api/profile' });
+
+  // Register Student Discovery & Matching Engine Routes
+  await app.register(studentsRoutes, { prefix: '/api/students' });
 
   // Custom 404 handler
   app.setNotFoundHandler((request, reply) => {

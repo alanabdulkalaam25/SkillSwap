@@ -5,6 +5,8 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { ProfilePage } from './pages/ProfilePage';
+import { DiscoverPage } from './pages/DiscoverPage';
 
 export const App: React.FC = () => {
   return (
@@ -19,6 +21,8 @@ export const App: React.FC = () => {
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/discover" element={<DiscoverPage />} />
           </Route>
 
           {/* Fallback to Home */}

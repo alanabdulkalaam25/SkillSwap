@@ -58,9 +58,9 @@ A peer-to-peer student skill exchange and matching platform restricted to colleg
     - `POST /api/profile/skills/wanted` & `DELETE /api/profile/skills/wanted/:id`
   - Frontend: Profile Page with details card, skill selector dropdown/search, badges with remove triggers.
 - **Verification Gate (100% Working Check):**
-  - [ ] Student can update profile bio, department, and semester.
-  - [ ] Student can add and remove offered and wanted skills.
-  - [ ] Data persists in PostgreSQL across refreshes.
+  - [x] Student can update profile bio, department, and semester.
+  - [x] Student can add and remove offered and wanted skills.
+  - [x] Data persists in PostgreSQL across refreshes.
 
 ---
 
@@ -75,9 +75,9 @@ A peer-to-peer student skill exchange and matching platform restricted to colleg
     - Same Department / Semester bonus: +10% / +5%
   - Frontend: Discover page with search bar, filter pills, student cards with "X% Match" compatibility badge and breakdown modal.
 - **Verification Gate (100% Working Check):**
-  - [ ] Search by skill filters students accurately.
-  - [ ] Students with mutual skills show high match score (>80%).
-  - [ ] Clicking a card opens their full public profile.
+  - [x] Search by skill filters students accurately.
+  - [x] Students with mutual skills show high match score (>80%).
+  - [x] Clicking a card opens their full public profile.
 
 ---
 
