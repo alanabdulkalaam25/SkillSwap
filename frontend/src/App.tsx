@@ -7,6 +7,7 @@ import { RegisterPage } from './pages/RegisterPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { DiscoverPage } from './pages/DiscoverPage';
+import { ExchangesPage } from './pages/ExchangesPage';
 
 export const App: React.FC = () => {
   return (
@@ -23,6 +24,7 @@ export const App: React.FC = () => {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/discover" element={<DiscoverPage />} />
+            <Route path="/exchanges" element={<ExchangesPage />} />
           </Route>
 
           {/* Fallback to Home */}

@@ -92,9 +92,9 @@ A peer-to-peer student skill exchange and matching platform restricted to colleg
     - `PATCH /api/exchanges/:id/status` (Accept / Reject / Cancel)
   - Frontend: "Send Exchange Request" modal, Requests page with Incoming/Sent tabs, status badges, contact email unlocked on accept.
 - **Verification Gate (100% Working Check):**
-  - [ ] Student A sends request to Student B.
-  - [ ] Student B sees request under "Incoming" and clicks "Accept".
-  - [ ] Student A sees status updated to "Accepted" under "Sent" and sees contact info.
+  - [x] Student A sends request to Student B.
+  - [x] Student B sees request under "Incoming" and clicks "Accept".
+  - [x] Student A sees status updated to "Accepted" under "Sent" and sees contact info.
 
 ---
 

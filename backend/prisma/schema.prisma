@@ -25,32 +25,41 @@ enum PriorityLevel {
   HIGH
 }
 
-model User {
-  id            String         @id @default(uuid())
-  name          String
-  email         String         @unique
-  password      String
-  department    String
-  semester      Int
-  rollNumber    String         @unique
-  bio           String?        @default("")
-  role          Role           @default(STUDENT)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+enum ExchangeStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELED
+}
 
-  offeredSkills OfferedSkill[]
-  wantedSkills  WantedSkill[]
+model User {
+  id         String   @id @default(uuid())
+  name       String
+  email      String   @unique
+  password   String
+  department String
+  semester   Int
+  rollNumber String   @unique
+  bio        String?  @default("")
+  role       Role     @default(STUDENT)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  offeredSkills     OfferedSkill[]
+  wantedSkills      WantedSkill[]
+  sentExchanges     ExchangeRequest[] @relation("ExchangeSender")
+  receivedExchanges ExchangeRequest[] @relation("ExchangeReceiver")
 }
 
 model Skill {
-  id            String         @id @default(uuid())
-  name          String         @unique
-  category      String
-  description   String?
-  createdAt     DateTime       @default(now())
+  id          String   @id @default(uuid())
+  name        String   @unique
+  category    String
+  description String?
+  createdAt   DateTime @default(now())
 
-  offeredBy     OfferedSkill[]
-  wantedBy      WantedSkill[]
+  offeredBy OfferedSkill[]
+  wantedBy  WantedSkill[]
 }
 
 model OfferedSkill {
@@ -61,10 +70,31 @@ model OfferedSkill {
   description String?
   createdAt   DateTime         @default(now())
 
-  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  skill       Skill            @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill            Skill             @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  exchangeRequests ExchangeRequest[]
 
   @@unique([userId, skillId])
+}
+
+model ExchangeRequest {
+  id             String         @id @default(uuid())
+  senderId       String
+  receiverId     String
+  offeredSkillId String
+  wantedSkillId  String
+  message        String         @default("")
+  status         ExchangeStatus @default(PENDING)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  sender       User         @relation("ExchangeSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver     User         @relation("ExchangeReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  offeredSkill OfferedSkill @relation(fields: [offeredSkillId], references: [id], onDelete: Cascade)
+  wantedSkill  WantedSkill  @relation(fields: [wantedSkillId], references: [id], onDelete: Cascade)
+
+  @@index([senderId, status, createdAt])
+  @@index([receiverId, status, createdAt])
 }
 
 model WantedSkill {
@@ -75,8 +105,9 @@ model WantedSkill {
   notes     String?
   createdAt DateTime      @default(now())
 
-  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  skill     Skill         @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill            Skill             @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  exchangeRequests ExchangeRequest[]
 
   @@unique([userId, skillId])
 }

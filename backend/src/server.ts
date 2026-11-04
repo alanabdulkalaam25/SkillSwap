@@ -6,6 +6,7 @@ import { authRoutes } from './routes/auth';
 import { skillsRoutes } from './routes/skills';
 import { profileRoutes } from './routes/profile';
 import { studentsRoutes } from './routes/students';
+import { exchangesRoutes } from './routes/exchanges';
 import { prisma } from './db';
 import './types';
 
@@ -60,6 +61,9 @@ export async function buildApp() {
 
   // Register Student Discovery & Matching Engine Routes
   await app.register(studentsRoutes, { prefix: '/api/students' });
+
+  // Register Skill Exchange Transaction Routes
+  await app.register(exchangesRoutes, { prefix: '/api/exchanges' });
 
   // Custom 404 handler
   app.setNotFoundHandler((request, reply) => {

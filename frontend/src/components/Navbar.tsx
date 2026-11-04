@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Sparkles, LogOut, GraduationCap, LayoutDashboard, UserCheck, Search } from 'lucide-react';
+import { Sparkles, LogOut, GraduationCap, LayoutDashboard, UserCheck, Search, ArrowLeftRight } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
@@ -69,6 +69,20 @@ export const Navbar: React.FC = () => {
               >
                 <Search className="w-3.5 h-3.5" />
                 <span>Discover Peers</span>
+              </NavLink>
+
+              <NavLink
+                to="/exchanges"
+                className={({ isActive }) =>
+                  `flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                    isActive
+                      ? 'bg-indigo-50 text-indigo-700 font-bold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  }`
+                }
+              >
+                <ArrowLeftRight className="w-3.5 h-3.5" />
+                <span>Exchanges</span>
               </NavLink>
             </nav>
           )}
@@ -152,6 +166,16 @@ export const Navbar: React.FC = () => {
             }
           >
             Discover
+          </NavLink>
+          <NavLink
+            to="/exchanges"
+            className={({ isActive }) =>
+              `flex-1 text-center py-1.5 text-xs font-medium rounded-lg ${
+                isActive ? 'bg-white shadow-xs text-indigo-600 font-bold' : 'text-slate-600'
+              }`
+            }
+          >
+            Exchanges
           </NavLink>
         </div>
       )}

@@ -98,9 +98,21 @@ export const discoverQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20).optional(),
 });
 
+export const createExchangeSchema = z.object({
+  receiverId: z.string().uuid('A valid receiver is required'),
+  offeredSkillId: z.string().uuid('A valid offered skill is required'),
+  wantedSkillId: z.string().uuid('A valid wanted skill is required'),
+  message: z.string().trim().max(1000, 'Message cannot exceed 1000 characters').optional().default(''),
+});
+
+export const exchangeStatusSchema = z.object({
+  status: z.enum(['ACCEPTED', 'REJECTED', 'CANCELED']),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type AddOfferedSkillInput = z.infer<typeof addOfferedSkillSchema>;
 export type AddWantedSkillInput = z.infer<typeof addWantedSkillSchema>;
 export type DiscoverQueryInput = z.infer<typeof discoverQuerySchema>;
+export type CreateExchangeInput = z.infer<typeof createExchangeSchema>;

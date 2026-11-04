@@ -153,6 +153,14 @@ export const DiscoverPage: React.FC = () => {
   const [selectedStudent, setSelectedStudent] = useState<DiscoverStudent | null>(null);
   const [modalStudent, setModalStudent] = useState<DiscoverStudent | null>(null);
   const [modalLoading, setModalLoading] = useState(false);
+  const [showRequestComposer, setShowRequestComposer] = useState(false);
+  const [mySkills, setMySkills] = useState<{ offeredSkills: DiscoverSkill[]; wantedSkills: DiscoverSkill[] } | null>(null);
+  const [requestOfferedId, setRequestOfferedId] = useState('');
+  const [requestWantedId, setRequestWantedId] = useState('');
+  const [requestMessage, setRequestMessage] = useState('');
+  const [requestLoading, setRequestLoading] = useState(false);
+  const [requestError, setRequestError] = useState<string | null>(null);
+  const [requestSent, setRequestSent] = useState(false);
 
   // Filter panel toggle (mobile)
   const [showFilters, setShowFilters] = useState(false);
@@ -246,6 +254,61 @@ export const DiscoverPage: React.FC = () => {
   const closeModal = () => {
     setSelectedStudent(null);
     setModalStudent(null);
+    setShowRequestComposer(false);
+    setRequestSent(false);
+    setRequestError(null);
+  };
+
+  const openRequestComposer = async () => {
+    if (!modalStudent) return;
+    setRequestLoading(true);
+    setRequestError(null);
+    setRequestSent(false);
+    try {
+      const response = await fetch('/api/profile/me', { headers: { Authorization: `Bearer ${token}` } });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Could not load your skills');
+      const profile = data.profile as { offeredSkills: DiscoverSkill[]; wantedSkills: DiscoverSkill[] };
+      setMySkills(profile);
+      setRequestOfferedId(profile.offeredSkills[0]?.id || '');
+      const matchingWant = profile.wantedSkills.find((wanted) => modalStudent.offeredSkills.some((offered) => offered.skillId === wanted.skillId));
+      setRequestWantedId(matchingWant?.id || '');
+      setShowRequestComposer(true);
+    } catch (err) {
+      setRequestError(err instanceof Error ? err.message : 'Could not load your skills');
+    } finally {
+      setRequestLoading(false);
+    }
+  };
+
+  const requestableWantedSkills = mySkills?.wantedSkills.filter((wanted) =>
+    modalStudent?.offeredSkills.some((offered) => offered.skillId === wanted.skillId)
+  ) || [];
+
+  const sendExchangeRequest = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!modalStudent) return;
+    setRequestLoading(true);
+    setRequestError(null);
+    try {
+      const response = await fetch('/api/exchanges', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          receiverId: modalStudent.id,
+          offeredSkillId: requestOfferedId,
+          wantedSkillId: requestWantedId,
+          message: requestMessage,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Could not send exchange request');
+      setRequestSent(true);
+    } catch (err) {
+      setRequestError(err instanceof Error ? err.message : 'Could not send exchange request');
+    } finally {
+      setRequestLoading(false);
+    }
   };
 
   const clearAllFilters = () => {
@@ -724,6 +787,55 @@ export const DiscoverPage: React.FC = () => {
                   <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
                     <p className="text-xs text-slate-600 italic leading-relaxed">"{modalStudent.bio}"</p>
                   </div>
+                )}
+
+                {requestSent ? (
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+                    Exchange request sent. You can follow its status in <a className="font-bold underline" href="/exchanges">Exchange Requests</a>.
+                  </div>
+                ) : showRequestComposer ? (
+                  <form onSubmit={sendExchangeRequest} className="rounded-2xl border border-indigo-200 bg-indigo-50/60 p-5 space-y-4">
+                    <div>
+                      <h3 className="font-bold text-slate-900">Propose a skill exchange</h3>
+                      <p className="mt-1 text-xs text-slate-500">Choose what you can teach and one of your learning goals that {modalStudent.name} offers.</p>
+                    </div>
+                    {requestError && <p role="alert" className="rounded-lg bg-rose-50 border border-rose-200 p-2.5 text-xs text-rose-700">{requestError}</p>}
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      <label className="text-xs font-semibold text-slate-600">
+                        You can teach
+                        <select value={requestOfferedId} onChange={(event) => setRequestOfferedId(event.target.value)} required className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm">
+                          <option value="">Choose an offered skill</option>
+                          {mySkills?.offeredSkills.map((skill) => <option key={skill.id} value={skill.id}>{skill.skill.name} · {skill.proficiency}</option>)}
+                        </select>
+                      </label>
+                      <label className="text-xs font-semibold text-slate-600">
+                        You want to learn
+                        <select value={requestWantedId} onChange={(event) => setRequestWantedId(event.target.value)} required className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm">
+                          <option value="">Choose a skill {modalStudent.name} offers</option>
+                          {requestableWantedSkills.map((skill) => <option key={skill.id} value={skill.id}>{skill.skill.name} · {skill.priority} priority</option>)}
+                        </select>
+                      </label>
+                    </div>
+                    {(!mySkills?.offeredSkills.length || !requestableWantedSkills.length) && (
+                      <p className="text-xs text-amber-700">To propose this exchange, add an offered skill and a wanted skill that this student offers to your profile.</p>
+                    )}
+                    <label className="block text-xs font-semibold text-slate-600">
+                      Message (optional)
+                      <textarea value={requestMessage} onChange={(event) => setRequestMessage(event.target.value)} maxLength={1000} rows={3} placeholder="Introduce yourself and suggest how you could exchange skills…" className="mt-1 w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal" />
+                    </label>
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <button type="button" onClick={() => setShowRequestComposer(false)} className="rounded-lg px-4 py-2 text-xs font-bold text-slate-600 hover:bg-white">Back to profile</button>
+                      <button type="submit" disabled={requestLoading || !requestOfferedId || !requestWantedId} className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-50">
+                        {requestLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowLeftRight className="w-3.5 h-3.5" />}
+                        Send request
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <button onClick={() => void openRequestComposer()} disabled={requestLoading} className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-60">
+                    {requestLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowLeftRight className="w-4 h-4" />}
+                    Send Exchange Request
+                  </button>
                 )}
 
                 {/* Match Breakdown */}
