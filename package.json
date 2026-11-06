@@ -2,6 +2,10 @@
   "name": "skillswap",
   "version": "1.0.0",
   "private": true,
+  "packageManager": "pnpm@12.16.1",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "pnpm --parallel --filter skillswap-backend --filter skillswap-frontend dev",
     "dev:backend": "pnpm --filter skillswap-backend dev",
