@@ -10,6 +10,7 @@ export const studentsRoutes: FastifyPluginAsync = async (fastify: FastifyInstanc
   // GET /api/students/departments - Distinct departments for filters
   fastify.get('/departments', async (request, reply) => {
     const departments = await prisma.user.findMany({
+      where: { role: 'STUDENT' },
       select: { department: true },
       distinct: ['department'],
       orderBy: { department: 'asc' },
@@ -66,6 +67,7 @@ export const studentsRoutes: FastifyPluginAsync = async (fastify: FastifyInstanc
     // 2. Build where filter for candidate discovery
     const whereClause: any = {
       id: { not: currentUserId },
+      role: 'STUDENT',
     };
 
     if (department) {

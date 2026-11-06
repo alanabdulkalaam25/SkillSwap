@@ -1,7 +1,27 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ArrowLeftRight, Check, Clock3, Loader2, Mail, RefreshCw, Send, X } from 'lucide-react';
-import { Navbar } from '../components/Navbar';
+import { Link } from 'react-router-dom';
+import {
+  ArrowLeftRight,
+  ArrowRight,
+  Check,
+  Clock3,
+  Compass,
+  Loader2,
+  Mail,
+  RefreshCw,
+  Send,
+  X,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { RequestSkeleton } from '../components/LoadingSkeleton';
+import { Button } from '../components/ui/button';
+import { Badge, type BadgeProps } from '../components/ui/badge';
+import { Card, CardContent } from '../components/ui/card';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
+import { Alert, AlertDescription } from '../components/ui/alert';
+import { cn } from '../lib/utils';
+
+type BadgeVariant = BadgeProps['variant'];
 
 type ExchangeStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELED';
 type ExchangeTab = 'incoming' | 'sent';
@@ -20,11 +40,123 @@ interface ExchangeRequest {
   wantedSkill: { skill: { name: string; category: string }; priority: string; notes?: string | null };
 }
 
-const statusStyle: Record<ExchangeStatus, string> = {
-  PENDING: 'bg-amber-50 text-amber-700 border-amber-200',
-  ACCEPTED: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  REJECTED: 'bg-rose-50 text-rose-700 border-rose-200',
-  CANCELED: 'bg-slate-100 text-slate-600 border-slate-200',
+const statusConfig: Record<ExchangeStatus, { label: string; variant: BadgeVariant }> = {
+  PENDING: { label: 'Pending', variant: 'warning' },
+  ACCEPTED: { label: 'Accepted', variant: 'success' },
+  REJECTED: { label: 'Declined', variant: 'destructive' },
+  CANCELED: { label: 'Canceled', variant: 'muted' },
+};
+
+const formatDate = (value: string) =>
+  new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+
+const ExchangeCard: React.FC<{
+  request: ExchangeRequest;
+  perspective: ExchangeTab;
+  userId?: string;
+  busy: boolean;
+  onStatus: (id: string, status: 'ACCEPTED' | 'REJECTED' | 'CANCELED') => void;
+}> = ({ request, perspective, userId, busy, onStatus }) => {
+  const incoming = perspective === 'incoming';
+  const other = incoming ? request.sender : request.receiver;
+  const config = statusConfig[request.status];
+  const isPending = request.status === 'PENDING';
+
+  return (
+    <Card className="transition-colors duration-normal hover:border-foreground/20">
+      <CardContent className="p-4 sm:p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary text-caption font-semibold text-secondary-foreground">
+              {other.name.charAt(0).toUpperCase()}
+            </span>
+            <div className="min-w-0">
+              <h2 className="truncate text-caption font-semibold text-foreground">{other.name}</h2>
+              <p className="mt-0.5 truncate text-caption-sm text-muted-foreground">
+                {other.department} · Semester {other.semester} · {incoming ? 'sent you a request' : 'recipient'}
+              </p>
+            </div>
+          </div>
+          <Badge variant={config.variant} className="shrink-0 font-normal">
+            {config.label}
+          </Badge>
+        </div>
+
+        <div className="mt-4 grid items-stretch gap-2 sm:grid-cols-[1fr_auto_1fr]">
+          <div className="rounded-lg border border-border bg-muted/30 p-3.5">
+            <p className="text-caption-sm font-medium uppercase tracking-[0.1em] text-muted-foreground">
+              {incoming ? 'They offer' : 'You offer'}
+            </p>
+            <p className="mt-1.5 text-caption font-semibold text-foreground">{request.offeredSkill.skill.name}</p>
+            <p className="mt-0.5 text-caption-sm text-muted-foreground">{request.offeredSkill.proficiency} proficiency</p>
+          </div>
+
+          <div className="flex items-center justify-center text-muted-foreground">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full border border-border bg-background">
+              <ArrowLeftRight className="h-3.5 w-3.5" />
+            </span>
+          </div>
+
+          <div className="rounded-lg border border-border bg-muted/30 p-3.5">
+            <p className="text-caption-sm font-medium uppercase tracking-[0.1em] text-muted-foreground">
+              {incoming ? 'They want to learn' : 'You want to learn'}
+            </p>
+            <p className="mt-1.5 text-caption font-semibold text-foreground">{request.wantedSkill.skill.name}</p>
+            <p className="mt-0.5 text-caption-sm text-muted-foreground">{request.wantedSkill.priority} priority</p>
+          </div>
+        </div>
+
+        {request.message && (
+          <p className="mt-3 rounded-lg border border-border bg-background p-3 text-caption leading-relaxed text-muted-foreground">
+            {request.message}
+          </p>
+        )}
+
+        {request.status === 'ACCEPTED' && request.contactEmail && (
+          <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-success/20 bg-success-muted p-3 text-caption text-success">
+            <Mail className="h-4 w-4 shrink-0" />
+            <span className="font-semibold">Contact unlocked</span>
+            <a className="underline underline-offset-2" href={`mailto:${request.contactEmail}`}>
+              {request.contactEmail}
+            </a>
+          </div>
+        )}
+
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3">
+          <span className="inline-flex items-center gap-1.5 text-caption-sm text-muted-foreground">
+            <Clock3 className="h-3.5 w-3.5" />
+            {formatDate(request.createdAt)}
+          </span>
+
+          {isPending && incoming && (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={busy}
+                onClick={() => onStatus(request.id, 'REJECTED')}
+                className="text-muted-foreground hover:text-destructive"
+              >
+                {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />}
+                Decline
+              </Button>
+              <Button size="sm" disabled={busy} onClick={() => onStatus(request.id, 'ACCEPTED')}>
+                {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                Accept
+              </Button>
+            </div>
+          )}
+
+          {isPending && !incoming && request.senderId === userId && (
+            <Button variant="outline" size="sm" disabled={busy} onClick={() => onStatus(request.id, 'CANCELED')}>
+              {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              Cancel request
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
 };
 
 export const ExchangesPage: React.FC = () => {
@@ -34,6 +166,7 @@ export const ExchangesPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [actionNotice, setActionNotice] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const loadRequests = useCallback(async () => {
@@ -53,11 +186,14 @@ export const ExchangesPage: React.FC = () => {
     }
   }, [tab, token]);
 
-  useEffect(() => { void loadRequests(); }, [loadRequests]);
+  useEffect(() => {
+    void loadRequests();
+  }, [loadRequests]);
 
   const updateStatus = async (requestId: string, status: 'ACCEPTED' | 'REJECTED' | 'CANCELED') => {
     setBusyId(requestId);
     setActionError(null);
+    setActionNotice(null);
     try {
       const response = await fetch(`/api/exchanges/${requestId}/status`, {
         method: 'PATCH',
@@ -66,6 +202,9 @@ export const ExchangesPage: React.FC = () => {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Could not update this request');
+      setActionNotice(
+        status === 'ACCEPTED' ? 'Request accepted. Contact details are now visible.' : `Request ${status.toLowerCase()}.`
+      );
       await loadRequests();
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Could not update this request');
@@ -74,91 +213,110 @@ export const ExchangesPage: React.FC = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-slate-50 flex flex-col pb-12">
-      <Navbar />
-      <main className="max-w-5xl w-full mx-auto px-4 sm:px-6 py-8 space-y-6">
-        <section className="rounded-3xl bg-gradient-to-r from-indigo-900 to-violet-900 text-white p-7 sm:p-9 shadow-lg">
-          <div className="flex items-center gap-3 text-indigo-200 text-xs font-semibold uppercase tracking-wider">
-            <ArrowLeftRight className="w-4 h-4" /> Skill exchange transaction flow
-          </div>
-          <h1 className="mt-3 text-2xl sm:text-3xl font-extrabold">Exchange Requests</h1>
-          <p className="mt-2 text-sm text-indigo-100 max-w-2xl">Propose a skill swap, review requests from classmates, and share contact details after a request is accepted.</p>
-        </section>
+  const renderList = (perspective: ExchangeTab) => {
+    if (loading) return <RequestSkeleton />;
 
-        <div className="bg-white border border-slate-200 rounded-2xl p-1.5 flex gap-2 shadow-sm">
-          {(['incoming', 'sent'] as const).map((value) => (
-            <button key={value} onClick={() => setTab(value)} className={`flex-1 rounded-xl px-4 py-3 text-sm font-bold transition ${tab === value ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}>
-              {value === 'incoming' ? 'Incoming Requests' : 'Sent Requests'}
-            </button>
-          ))}
+    if (error) {
+      return (
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border px-6 py-16 text-center">
+          <p className="text-body-sm font-medium text-foreground">Could not load requests</p>
+          <p className="mt-1 text-caption text-muted-foreground">{error}</p>
+          <Button variant="outline" size="sm" onClick={() => void loadRequests()} className="mt-4">
+            <RefreshCw className="h-3.5 w-3.5" />
+            Try again
+          </Button>
         </div>
+      );
+    }
 
-        {actionError && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{actionError}</div>}
+    if (requests.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border px-6 py-16 text-center">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background text-muted-foreground">
+            {perspective === 'incoming' ? <Send className="h-4 w-4" /> : <Compass className="h-4 w-4" />}
+          </span>
+          <h2 className="mt-3 text-heading-sm font-semibold text-foreground">
+            {perspective === 'incoming' ? 'No incoming requests' : 'No sent requests'}
+          </h2>
+          <p className="mt-1 max-w-sm text-body-sm leading-relaxed text-muted-foreground">
+            {perspective === 'incoming'
+              ? 'When a classmate proposes an exchange, it will show up here.'
+              : 'Find a peer with a complementary skill and send your first proposal.'}
+          </p>
+          <Button asChild variant="outline" size="sm" className="mt-4">
+            <Link to="/discover">
+              Discover peers
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </Button>
+        </div>
+      );
+    }
 
-        {loading ? (
-          <div className="py-20 flex flex-col items-center gap-3 text-slate-500"><Loader2 className="w-8 h-8 animate-spin text-indigo-500" /><span className="text-sm">Loading requests…</span></div>
-        ) : error ? (
-          <div className="py-16 flex flex-col items-center gap-4 text-center"><p className="text-sm text-rose-600">{error}</p><button onClick={() => void loadRequests()} className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 text-white px-4 py-2 text-sm font-semibold"><RefreshCw className="w-4 h-4" /> Retry</button></div>
-        ) : requests.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white py-16 text-center"><Send className="w-8 h-8 text-slate-300 mx-auto" /><h2 className="mt-3 font-bold text-slate-700">No {tab} requests yet</h2><p className="mt-1 text-sm text-slate-500">Discover classmates and propose a skill exchange to get started.</p></div>
-        ) : (
-          <div className="space-y-4">
-            {requests.map((request) => {
-              const otherStudent = tab === 'incoming' ? request.sender : request.receiver;
-              const isPending = request.status === 'PENDING';
-              return (
-                <article key={request.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="p-5 sm:p-6 space-y-4">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <h2 className="font-bold text-slate-900">{otherStudent.name}</h2>
-                        <p className="mt-1 text-xs text-slate-500">{otherStudent.department} · Semester {otherStudent.semester} · {tab === 'incoming' ? 'sent you a request' : 'recipient'}</p>
-                      </div>
-                      <span className={`rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${statusStyle[request.status]}`}>{request.status.toLowerCase()}</span>
-                    </div>
+    return (
+      <div className="space-y-3">
+        {requests.map((request) => (
+          <ExchangeCard
+            key={request.id}
+            request={request}
+            perspective={perspective}
+            userId={user?.id}
+            busy={busyId === request.id}
+            onStatus={(id, status) => void updateStatus(id, status)}
+          />
+        ))}
+      </div>
+    );
+  };
 
-                    <div className="grid sm:grid-cols-[1fr_auto_1fr] items-stretch gap-3">
-                      <div className="rounded-xl border border-indigo-100 bg-indigo-50/70 p-4">
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">{tab === 'incoming' ? 'They offer' : 'You offer'}</div>
-                        <div className="mt-1 font-bold text-slate-900">{request.offeredSkill.skill.name}</div>
-                        <div className="mt-1 text-xs text-slate-500">{request.offeredSkill.proficiency} proficiency</div>
-                      </div>
-                      <div className="flex items-center justify-center text-slate-400"><ArrowLeftRight className="w-5 h-5" /></div>
-                      <div className="rounded-xl border border-violet-100 bg-violet-50/70 p-4">
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-violet-600">{tab === 'incoming' ? 'They want to learn' : 'You want to learn'}</div>
-                        <div className="mt-1 font-bold text-slate-900">{request.wantedSkill.skill.name}</div>
-                        <div className="mt-1 text-xs text-slate-500">{request.wantedSkill.priority} priority</div>
-                      </div>
-                    </div>
+  return (
+    <div className="space-y-6">
+      <header className="border-b border-border pb-6">
+        <p className="eyebrow">Exchanges</p>
+        <h1 className="mt-2 text-display-sm font-semibold text-foreground">Your learning partnerships.</h1>
+        <p className="page-description">
+          Review proposals, accept a match, and unlock contact details once both sides agree.
+        </p>
+      </header>
 
-                    {request.message && <p className="rounded-xl bg-slate-50 p-3 text-sm text-slate-600">“{request.message}”</p>}
+      <Tabs value={tab} onValueChange={(value: ExchangeTab) => setTab(value)} className="w-full">
+        <TabsList className="w-full justify-start bg-muted p-1 sm:w-fit">
+          <TabsTrigger value="incoming" className="flex-1 gap-2 sm:flex-none">
+            Incoming
+            {!loading && tab === 'incoming' && requests.length > 0 && (
+              <span className="rounded-full bg-background px-1.5 py-0.5 text-[0.65rem] font-medium text-muted-foreground">
+                {requests.length}
+              </span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="sent" className="flex-1 gap-2 sm:flex-none">
+            Sent
+            {!loading && tab === 'sent' && requests.length > 0 && (
+              <span className="rounded-full bg-background px-1.5 py-0.5 text-[0.65rem] font-medium text-muted-foreground">
+                {requests.length}
+              </span>
+            )}
+          </TabsTrigger>
+        </TabsList>
 
-                    {request.status === 'ACCEPTED' && request.contactEmail && (
-                      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
-                        <Mail className="w-4 h-4" /><span className="font-semibold">Contact unlocked:</span><a className="underline underline-offset-2" href={`mailto:${request.contactEmail}`}>{request.contactEmail}</a>
-                      </div>
-                    )}
-
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3">
-                      <span className="flex items-center gap-1.5 text-xs text-slate-400"><Clock3 className="w-3.5 h-3.5" />{new Date(request.createdAt).toLocaleString()}</span>
-                      {isPending && tab === 'incoming' && (
-                        <div className="flex gap-2">
-                          <button disabled={busyId === request.id} onClick={() => void updateStatus(request.id, 'REJECTED')} className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50 disabled:opacity-50"><X className="w-3.5 h-3.5" /> Reject</button>
-                          <button disabled={busyId === request.id} onClick={() => void updateStatus(request.id, 'ACCEPTED')} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50"><Check className="w-3.5 h-3.5" /> Accept</button>
-                        </div>
-                      )}
-                      {isPending && tab === 'sent' && request.senderId === user?.id && (
-                        <button disabled={busyId === request.id} onClick={() => void updateStatus(request.id, 'CANCELED')} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50">Cancel request</button>
-                      )}
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+        {actionError && (
+          <Alert variant="destructive" className="mt-4">
+            <AlertDescription>{actionError}</AlertDescription>
+          </Alert>
         )}
-      </main>
+        {actionNotice && (
+          <Alert variant="success" className="mt-4 animate-in">
+            <AlertDescription>{actionNotice}</AlertDescription>
+          </Alert>
+        )}
+
+        <TabsContent value="incoming" className={cn('mt-4', tab !== 'incoming' && 'hidden')}>
+          {renderList('incoming')}
+        </TabsContent>
+        <TabsContent value="sent" className={cn('mt-4', tab !== 'sent' && 'hidden')}>
+          {renderList('sent')}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

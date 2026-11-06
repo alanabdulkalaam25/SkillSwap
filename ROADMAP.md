@@ -110,8 +110,8 @@ A peer-to-peer student skill exchange and matching platform restricted to colleg
     - `POST /api/admin/skills` (add new system-wide skills)
   - Frontend: `/admin` dashboard with metrics cards, student table, moderation actions.
 - **Verification Gate (100% Working Check):**
-  - [ ] Non-admin students receive `403 Forbidden` on admin routes.
-  - [ ] Admin can view live stats and manage student accounts and skills.
+  - [x] Non-admin students receive `403 Forbidden` on admin routes.
+  - [x] Admin can view live stats, search the student roster, activate/suspend accounts, and add system-wide skills.
 
 ---
 
@@ -119,8 +119,8 @@ A peer-to-peer student skill exchange and matching platform restricted to colleg
 **Goal:** 15–20 realistic mock student profiles, UI polish, and smooth viva presentation flow.
 
 - **Tasks:**
-  - Seed script populating 15–20 realistic profiles across departments with diverse skills.
-  - UI polish: toast notifications, loading skeletons, empty states.
-  - Rehearsed 5-minute presentation demo script.
+  - [x] Seed script populates 16 realistic profiles across departments with diverse skills.
+  - [x] UI polish includes action toasts, loading skeletons, and empty/error states.
+  - [x] Five-minute presentation demo script is documented in `VIVA_DEMO.md`.
 - **Verification Gate (100% Working Check):**
-  - [ ] Complete end-to-end user flow runs cleanly on localhost without console errors.
+  - [ ] Complete end-to-end user flow runs cleanly on localhost without console errors (manual run-through not performed in this implementation pass).

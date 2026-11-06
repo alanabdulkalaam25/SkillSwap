@@ -42,6 +42,7 @@ model User {
   rollNumber String   @unique
   bio        String?  @default("")
   role       Role     @default(STUDENT)
+  isActive   Boolean  @default(true)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

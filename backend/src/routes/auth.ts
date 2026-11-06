@@ -120,6 +120,10 @@ export const authRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) =
       });
     }
 
+    if (!user.isActive) {
+      return reply.status(403).send({ success: false, error: 'This account has been suspended. Contact a college administrator.' });
+    }
+
     const token = fastify.jwt.sign({
       id: user.id,
       email: user.email,

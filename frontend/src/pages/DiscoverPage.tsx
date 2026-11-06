@@ -1,29 +1,37 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Navbar } from '../components/Navbar';
+import { DirectorySkeleton } from '../components/LoadingSkeleton';
 import {
-  Search,
-  Filter,
-  Users,
-  GraduationCap,
-  Layers,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Sparkles,
+  AlertCircle,
   ArrowLeftRight,
+  ArrowRight,
   BookOpen,
-  Target,
-  X,
+  CheckCircle2,
+  Compass,
+  GraduationCap,
   Hash,
-  Zap,
-  TrendingUp,
-  Eye,
+  Layers,
   Loader2,
   RefreshCw,
-  AlertCircle,
-  CheckCircle2,
+  Search,
+  SlidersHorizontal,
+  Sparkles,
+  Target,
+  Users,
+  X,
+  Zap,
 } from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Badge } from '../components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { Pagination } from '../components/ui/pagination';
+import { Alert, AlertDescription } from '../components/ui/alert';
+import { Label } from '../components/ui/label';
+import { Textarea } from '../components/ui/textarea';
+import { cn } from '../lib/utils';
 
 /* ---------- Types ---------- */
 interface MatchedSkill {
@@ -90,41 +98,141 @@ interface DiscoverResponse {
   students: DiscoverStudent[];
 }
 
-/* ---------- Badge Helpers ---------- */
-const matchBadgeColor = (score: number) => {
-  if (score >= 80) return 'bg-emerald-100 text-emerald-800 border-emerald-300';
-  if (score >= 50) return 'bg-indigo-100 text-indigo-800 border-indigo-300';
-  if (score >= 25) return 'bg-amber-100 text-amber-800 border-amber-300';
-  return 'bg-slate-100 text-slate-600 border-slate-300';
-};
+const ALL = 'all';
 
-const matchRingColor = (score: number) => {
-  if (score >= 80) return 'ring-emerald-400';
-  if (score >= 50) return 'ring-indigo-400';
-  if (score >= 25) return 'ring-amber-400';
-  return 'ring-slate-300';
-};
+const matchTone = (score: number) =>
+  score >= 50 ? 'border-foreground/20 bg-secondary text-foreground' : 'border-border bg-background text-muted-foreground';
 
-const proficiencyBadge = (level: string) => {
+const proficiencyBadge = (level?: string) => {
   const map: Record<string, string> = {
-    EXPERT: 'bg-purple-100 text-purple-800',
-    ADVANCED: 'bg-blue-100 text-blue-800',
-    INTERMEDIATE: 'bg-teal-100 text-teal-800',
-    BEGINNER: 'bg-slate-100 text-slate-600',
+    EXPERT: 'border-success/20 bg-success-muted text-success',
+    ADVANCED: 'border-foreground/20 bg-secondary text-foreground',
+    INTERMEDIATE: 'border-warning/20 bg-warning-muted text-warning',
+    BEGINNER: 'border-border bg-muted text-muted-foreground',
   };
-  return map[level] || 'bg-slate-100 text-slate-600';
+  return (level && map[level]) || 'border-border bg-muted text-muted-foreground';
 };
 
-const priorityBadge = (level: string) => {
+const priorityBadge = (level?: string) => {
   const map: Record<string, string> = {
-    HIGH: 'bg-rose-100 text-rose-800',
-    MEDIUM: 'bg-amber-100 text-amber-800',
-    LOW: 'bg-slate-100 text-slate-600',
+    HIGH: 'border-destructive/20 bg-destructive-muted text-destructive',
+    MEDIUM: 'border-warning/20 bg-warning-muted text-warning',
+    LOW: 'border-border bg-muted text-muted-foreground',
   };
-  return map[level] || 'bg-slate-100 text-slate-600';
+  return (level && map[level]) || 'border-border bg-muted text-muted-foreground';
 };
 
-/* ---------- Main Component ---------- */
+/* ---------- Filter panel ---------- */
+interface FilterProps {
+  departments: string[];
+  dept: string;
+  sem: string;
+  skill: string;
+  mutual: boolean;
+  active: boolean;
+  onDept: (value: string) => void;
+  onSem: (value: string) => void;
+  onSkill: (value: string) => void;
+  onMutual: (value: boolean) => void;
+  onClear: () => void;
+}
+
+const FiltersPanel: React.FC<FilterProps> = ({
+  departments,
+  dept,
+  sem,
+  skill,
+  mutual,
+  active,
+  onDept,
+  onSem,
+  onSkill,
+  onMutual,
+  onClear,
+}) => (
+  <div className="space-y-4">
+    <div className="flex items-center justify-between">
+      <p className="text-caption font-medium text-foreground">Filters</p>
+      {active && (
+        <button
+          type="button"
+          onClick={onClear}
+          className="text-caption-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Clear all
+        </button>
+      )}
+    </div>
+
+    <div className="space-y-2">
+      <Label className="text-caption-sm text-muted-foreground">Department</Label>
+      <Select value={dept} onValueChange={onDept}>
+        <SelectTrigger>
+          <SelectValue placeholder="All departments" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={ALL}>All departments</SelectItem>
+          {departments.map((department) => (
+            <SelectItem key={department} value={department}>
+              {department}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+
+    <div className="space-y-2">
+      <Label className="text-caption-sm text-muted-foreground">Semester</Label>
+      <Select value={sem} onValueChange={onSem}>
+        <SelectTrigger>
+          <SelectValue placeholder="All semesters" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={ALL}>All semesters</SelectItem>
+          {Array.from({ length: 10 }, (_, index) => index + 1).map((semester) => (
+            <SelectItem key={semester} value={String(semester)}>
+              Semester {semester}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+
+    <div className="space-y-2">
+      <Label htmlFor="skill-filter" className="text-caption-sm text-muted-foreground">
+        Skill
+      </Label>
+      <Input
+        id="skill-filter"
+        placeholder="React, Python, Figma…"
+        value={skill}
+        onChange={(event) => onSkill(event.target.value)}
+      />
+    </div>
+
+    <button
+      type="button"
+      aria-pressed={mutual}
+      onClick={() => onMutual(!mutual)}
+      className={cn(
+        'flex w-full items-center justify-between gap-2 rounded-md border px-3 py-2 text-left text-caption font-medium transition-colors',
+        mutual
+          ? 'border-foreground/30 bg-secondary text-foreground'
+          : 'border-border bg-background text-muted-foreground hover:bg-accent hover:text-foreground'
+      )}
+    >
+      <span className="inline-flex items-center gap-2">
+        <ArrowLeftRight className="h-3.5 w-3.5" />
+        Mutual matches only
+      </span>
+      <span className={cn('flex h-4 w-4 items-center justify-center rounded-sm border', mutual ? 'border-foreground bg-foreground text-background' : 'border-border')}>
+        {mutual && <CheckCircle2 className="h-3 w-3" />}
+      </span>
+    </button>
+  </div>
+);
+
+/* ---------- Page ---------- */
 export const DiscoverPage: React.FC = () => {
   const { token } = useAuth();
 
@@ -133,23 +241,20 @@ export const DiscoverPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Filters
+  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [deptFilter, setDeptFilter] = useState('');
-  const [semFilter, setSemFilter] = useState('');
+  const [deptFilter, setDeptFilter] = useState(ALL);
+  const [semFilter, setSemFilter] = useState(ALL);
   const [skillFilter, setSkillFilter] = useState('');
   const [mutualOnly, setMutualOnly] = useState(false);
   const [sortBy, setSortBy] = useState('score_desc');
 
-  // Pagination
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-
-  // Departments list for filter dropdown
   const [departments, setDepartments] = useState<string[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
 
-  // Profile modal
   const [selectedStudent, setSelectedStudent] = useState<DiscoverStudent | null>(null);
   const [modalStudent, setModalStudent] = useState<DiscoverStudent | null>(null);
   const [modalLoading, setModalLoading] = useState(false);
@@ -162,66 +267,58 @@ export const DiscoverPage: React.FC = () => {
   const [requestError, setRequestError] = useState<string | null>(null);
   const [requestSent, setRequestSent] = useState(false);
 
-  // Filter panel toggle (mobile)
-  const [showFilters, setShowFilters] = useState(false);
-
-  // Fetch departments on mount
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
-        const res = await fetch('/api/students/departments', {
+        const response = await fetch('/api/students/departments', {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (res.ok) {
-          const data = await res.json();
+        if (response.ok) {
+          const data = await response.json();
           setDepartments(data.departments || []);
         }
-      } catch (_) {}
+      } catch {
+        /* department filter is optional */
+      }
     };
-    fetchDepartments();
+    void fetchDepartments();
   }, [token]);
 
-  // Fetch students on filter/page change
   const fetchStudents = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const params = new URLSearchParams();
       if (searchQuery) params.set('search', searchQuery);
-      if (deptFilter) params.set('department', deptFilter);
-      if (semFilter) params.set('semester', semFilter);
-      if (skillFilter) params.set('skill', skillFilter);
+      if (deptFilter !== ALL) params.set('department', deptFilter);
+      if (semFilter !== ALL) params.set('semester', semFilter);
+      if (skillFilter.trim()) params.set('skill', skillFilter.trim());
       if (mutualOnly) params.set('mutualOnly', 'true');
       params.set('sort', sortBy);
       params.set('page', page.toString());
       params.set('limit', '20');
 
-      const res = await fetch(`/api/students/discover?${params.toString()}`, {
+      const response = await fetch(`/api/students/discover?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!res.ok) {
-        throw new Error('Failed to fetch student directory');
-      }
-
-      const data: DiscoverResponse = await res.json();
+      if (!response.ok) throw new Error('Failed to fetch student directory');
+      const data: DiscoverResponse = await response.json();
       setStudents(data.students);
       setStats(data.stats);
       setTotalPages(data.totalPages);
       setTotalCount(data.total);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load discover directory');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load discover directory');
     } finally {
       setLoading(false);
     }
   }, [token, searchQuery, deptFilter, semFilter, skillFilter, mutualOnly, sortBy, page]);
 
   useEffect(() => {
-    fetchStudents();
+    void fetchStudents();
   }, [fetchStudents]);
 
-  // Debounced search
-  const [searchInput, setSearchInput] = useState('');
   useEffect(() => {
     const timeout = setTimeout(() => {
       setSearchQuery(searchInput);
@@ -230,16 +327,15 @@ export const DiscoverPage: React.FC = () => {
     return () => clearTimeout(timeout);
   }, [searchInput]);
 
-  // Open student profile modal
   const openProfile = async (student: DiscoverStudent) => {
     setSelectedStudent(student);
     setModalLoading(true);
     try {
-      const res = await fetch(`/api/students/${student.id}`, {
+      const response = await fetch(`/api/students/${student.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) {
-        const data = await res.json();
+      if (response.ok) {
+        const data = await response.json();
         setModalStudent(data.student);
       } else {
         setModalStudent(student);
@@ -271,7 +367,9 @@ export const DiscoverPage: React.FC = () => {
       const profile = data.profile as { offeredSkills: DiscoverSkill[]; wantedSkills: DiscoverSkill[] };
       setMySkills(profile);
       setRequestOfferedId(profile.offeredSkills[0]?.id || '');
-      const matchingWant = profile.wantedSkills.find((wanted) => modalStudent.offeredSkills.some((offered) => offered.skillId === wanted.skillId));
+      const matchingWant = profile.wantedSkills.find((wanted) =>
+        modalStudent.offeredSkills.some((offered) => offered.skillId === wanted.skillId)
+      );
       setRequestWantedId(matchingWant?.id || '');
       setShowRequestComposer(true);
     } catch (err) {
@@ -281,9 +379,10 @@ export const DiscoverPage: React.FC = () => {
     }
   };
 
-  const requestableWantedSkills = mySkills?.wantedSkills.filter((wanted) =>
-    modalStudent?.offeredSkills.some((offered) => offered.skillId === wanted.skillId)
-  ) || [];
+  const requestableWantedSkills =
+    mySkills?.wantedSkills.filter((wanted) =>
+      modalStudent?.offeredSkills.some((offered) => offered.skillId === wanted.skillId)
+    ) || [];
 
   const sendExchangeRequest = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -314,8 +413,8 @@ export const DiscoverPage: React.FC = () => {
   const clearAllFilters = () => {
     setSearchInput('');
     setSearchQuery('');
-    setDeptFilter('');
-    setSemFilter('');
+    setDeptFilter(ALL);
+    setSemFilter(ALL);
     setSkillFilter('');
     setMutualOnly(false);
     setSortBy('score_desc');
@@ -323,672 +422,566 @@ export const DiscoverPage: React.FC = () => {
   };
 
   const hasActiveFilters =
-    searchQuery || deptFilter || semFilter || skillFilter || mutualOnly || sortBy !== 'score_desc';
+    Boolean(searchQuery) || deptFilter !== ALL || semFilter !== ALL || Boolean(skillFilter.trim()) || mutualOnly || sortBy !== 'score_desc';
+
+  const filterProps: FilterProps = {
+    departments,
+    dept: deptFilter,
+    sem: semFilter,
+    skill: skillFilter,
+    mutual: mutualOnly,
+    active: deptFilter !== ALL || semFilter !== ALL || Boolean(skillFilter.trim()) || mutualOnly,
+    onDept: (value) => {
+      setDeptFilter(value);
+      setPage(1);
+    },
+    onSem: (value) => {
+      setSemFilter(value);
+      setPage(1);
+    },
+    onSkill: (value) => {
+      setSkillFilter(value);
+      setPage(1);
+    },
+    onMutual: (value) => {
+      setMutualOnly(value);
+      setPage(1);
+    },
+    onClear: clearAllFilters,
+  };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col pb-16">
-      <Navbar />
+    <div className="space-y-6">
+      <header className="border-b border-border pb-6">
+        <p className="eyebrow">Discover</p>
+        <h1 className="mt-2 text-display-sm font-semibold text-foreground">Find a peer, not a profile.</h1>
+        <p className="page-description">
+          Search your campus for students whose skills complement yours — then propose a fair exchange.
+        </p>
+      </header>
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        {/* Header Banner */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-violet-900 via-indigo-800 to-purple-950 text-white p-8 sm:p-10 shadow-xl shadow-indigo-900/10 border border-indigo-700/50">
-          <div className="absolute right-0 top-0 translate-x-10 -translate-y-10 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="relative z-10 space-y-3">
-            <div className="inline-flex items-center space-x-2 bg-purple-500/20 text-purple-200 border border-purple-400/30 px-3 py-1 rounded-full text-xs font-semibold">
-              <Sparkles className="w-3.5 h-3.5 text-purple-300" />
-              <span>Phase 3 • Discover Directory & Smart Matching Engine</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              Discover Campus Peers
-            </h1>
-            <p className="text-sm text-indigo-200/90 max-w-2xl">
-              Browse the student directory and find peers whose skills complement yours.
-              The matching engine scores mutual exchange compatibility — find your ideal skill swap partners.
-            </p>
+      {stats && (
+        <div className="grid grid-cols-3 divide-x divide-border overflow-hidden rounded-xl border border-border bg-card">
+          <div className="p-4 sm:p-5">
+            <p className="text-caption-sm text-muted-foreground">Peers found</p>
+            <p className="mt-1 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">{stats.totalFound}</p>
           </div>
-        </div>
-
-        {/* Stats Row */}
-        {stats && (
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
-                <Users className="w-5 h-5 text-indigo-600" />
-              </div>
-              <div>
-                <div className="text-xl font-extrabold text-slate-900">{stats.totalFound}</div>
-                <div className="text-[11px] text-slate-500 font-medium">Peers Found</div>
-              </div>
-            </div>
-            <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
-                <ArrowLeftRight className="w-5 h-5 text-emerald-600" />
-              </div>
-              <div>
-                <div className="text-xl font-extrabold text-slate-900">{stats.mutualMatches}</div>
-                <div className="text-[11px] text-slate-500 font-medium">Mutual Matches</div>
-              </div>
-            </div>
-            <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-amber-600" />
-              </div>
-              <div>
-                <div className="text-xl font-extrabold text-slate-900">{stats.highMatches}</div>
-                <div className="text-[11px] text-slate-500 font-medium">High Match (≥70%)</div>
-              </div>
-            </div>
+          <div className="p-4 sm:p-5">
+            <p className="text-caption-sm text-muted-foreground">Mutual matches</p>
+            <p className="mt-1 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">{stats.mutualMatches}</p>
           </div>
-        )}
-
-        {/* Search & Filters */}
-        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
-          {/* Search Bar */}
-          <div className="p-4 flex items-center space-x-3">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search by name, skill, department, or roll number..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition"
-              />
-            </div>
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`inline-flex items-center space-x-1.5 px-4 py-2.5 rounded-xl border text-xs font-semibold transition ${
-                showFilters || hasActiveFilters
-                  ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                  : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-              }`}
-            >
-              <Filter className="w-3.5 h-3.5" />
-              <span>Filters</span>
-              {hasActiveFilters && (
-                <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-              )}
-              <ChevronDown className={`w-3 h-3 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
-            </button>
-            {hasActiveFilters && (
-              <button
-                onClick={clearAllFilters}
-                className="inline-flex items-center space-x-1 px-3 py-2.5 rounded-xl text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100 transition"
-              >
-                <X className="w-3 h-3" />
-                <span>Clear</span>
-              </button>
-            )}
-          </div>
-
-          {/* Filter Panel */}
-          {showFilters && (
-            <div className="px-4 pb-4 border-t border-slate-100 pt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-              {/* Department */}
-              <div>
-                <label className="block text-[11px] font-bold text-slate-500 mb-1 uppercase tracking-wider">
-                  Department
-                </label>
-                <select
-                  value={deptFilter}
-                  onChange={(e) => { setDeptFilter(e.target.value); setPage(1); }}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                >
-                  <option value="">All Departments</option>
-                  {departments.map((d) => (
-                    <option key={d} value={d}>{d}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Semester */}
-              <div>
-                <label className="block text-[11px] font-bold text-slate-500 mb-1 uppercase tracking-wider">
-                  Semester
-                </label>
-                <select
-                  value={semFilter}
-                  onChange={(e) => { setSemFilter(e.target.value); setPage(1); }}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                >
-                  <option value="">All Semesters</option>
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((s) => (
-                    <option key={s} value={s}>Semester {s}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Skill */}
-              <div>
-                <label className="block text-[11px] font-bold text-slate-500 mb-1 uppercase tracking-wider">
-                  Skill
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. React, Python..."
-                  value={skillFilter}
-                  onChange={(e) => { setSkillFilter(e.target.value); setPage(1); }}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                />
-              </div>
-
-              {/* Sort */}
-              <div>
-                <label className="block text-[11px] font-bold text-slate-500 mb-1 uppercase tracking-wider">
-                  Sort By
-                </label>
-                <select
-                  value={sortBy}
-                  onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                >
-                  <option value="score_desc">Highest Match</option>
-                  <option value="score_asc">Lowest Match</option>
-                  <option value="name_asc">Name (A–Z)</option>
-                  <option value="skills_desc">Most Skills</option>
-                  <option value="newest">Newest First</option>
-                </select>
-              </div>
-
-              {/* Mutual Only Toggle */}
-              <div className="flex items-end">
-                <button
-                  onClick={() => { setMutualOnly(!mutualOnly); setPage(1); }}
-                  className={`w-full inline-flex items-center justify-center space-x-2 px-4 py-2 rounded-lg border text-xs font-semibold transition ${
-                    mutualOnly
-                      ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
-                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                  }`}
-                >
-                  <ArrowLeftRight className="w-3.5 h-3.5" />
-                  <span>{mutualOnly ? 'Mutual Only ✓' : 'Mutual Only'}</span>
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Results */}
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 space-y-3">
-            <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
-            <p className="text-sm text-slate-500 font-medium">Scanning campus peer directory...</p>
-          </div>
-        ) : error ? (
-          <div className="flex flex-col items-center justify-center py-20 space-y-4">
-            <AlertCircle className="w-10 h-10 text-rose-400" />
-            <p className="text-sm text-rose-600 font-semibold">{error}</p>
-            <button
-              onClick={fetchStudents}
-              className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span>Retry</span>
-            </button>
-          </div>
-        ) : students.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 space-y-3">
-            <Users className="w-10 h-10 text-slate-300" />
-            <p className="text-sm text-slate-500 font-medium">No peers match your current filters.</p>
-            {hasActiveFilters && (
-              <button
-                onClick={clearAllFilters}
-                className="text-xs font-bold text-indigo-600 hover:text-indigo-800"
-              >
-                Clear all filters →
-              </button>
-            )}
-          </div>
-        ) : (
-          <>
-            {/* Result Count */}
-            <div className="flex items-center justify-between text-xs text-slate-500">
-              <span>
-                Showing <span className="font-bold text-slate-700">{students.length}</span> of{' '}
-                <span className="font-bold text-slate-700">{totalCount}</span> peers
-              </span>
-              <span className="font-medium">
-                Page {page} of {totalPages}
-              </span>
-            </div>
-
-            {/* Student Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-              {students.map((student) => (
-                <div
-                  key={student.id}
-                  onClick={() => openProfile(student)}
-                  className={`bg-white rounded-2xl border shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer group overflow-hidden ${
-                    student.match.isMutual
-                      ? 'border-emerald-200/80 hover:border-emerald-300'
-                      : 'border-slate-200/80 hover:border-indigo-200'
-                  }`}
-                >
-                  {/* Match Score Bar */}
-                  <div
-                    className={`h-1.5 transition-all ${
-                      student.match.score >= 80
-                        ? 'bg-gradient-to-r from-emerald-400 to-emerald-500'
-                        : student.match.score >= 50
-                        ? 'bg-gradient-to-r from-indigo-400 to-indigo-500'
-                        : student.match.score >= 25
-                        ? 'bg-gradient-to-r from-amber-400 to-amber-500'
-                        : 'bg-slate-200'
-                    }`}
-                    style={{ width: `${Math.max(student.match.score, 5)}%` }}
-                  />
-
-                  <div className="p-5 space-y-4">
-                    {/* Header Row */}
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div
-                          className={`w-12 h-12 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white font-bold text-lg flex items-center justify-center shadow-sm ring-2 ring-offset-2 ${matchRingColor(student.match.score)}`}
-                        >
-                          {student.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-slate-900 text-sm group-hover:text-indigo-700 transition">
-                            {student.name}
-                          </h3>
-                          <div className="flex items-center space-x-1.5 text-[11px] text-slate-500">
-                            <GraduationCap className="w-3 h-3" />
-                            <span>{student.department}</span>
-                            <span className="text-slate-300">•</span>
-                            <span>Sem {student.semester}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Match Score Badge */}
-                      <div
-                        className={`flex flex-col items-center px-2.5 py-1.5 rounded-xl border text-center ${matchBadgeColor(student.match.score)}`}
-                      >
-                        <span className="text-lg font-extrabold leading-none">{student.match.score}%</span>
-                        <span className="text-[9px] font-bold uppercase tracking-wider mt-0.5">Match</span>
-                      </div>
-                    </div>
-
-                    {/* Bio */}
-                    {student.bio && (
-                      <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed italic">
-                        "{student.bio}"
-                      </p>
-                    )}
-
-                    {/* Mutual Badge */}
-                    {student.match.isMutual && (
-                      <div className="inline-flex items-center space-x-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-lg text-[11px] font-bold">
-                        <ArrowLeftRight className="w-3 h-3" />
-                        <span>Mutual Exchange Available</span>
-                      </div>
-                    )}
-
-                    {/* Skill Exchange Preview */}
-                    <div className="space-y-2">
-                      {student.match.theyCanTeachYou.length > 0 && (
-                        <div className="flex items-start space-x-2">
-                          <div className="w-5 h-5 rounded bg-blue-50 flex items-center justify-center shrink-0 mt-0.5">
-                            <BookOpen className="w-3 h-3 text-blue-600" />
-                          </div>
-                          <div className="text-[11px]">
-                            <span className="text-slate-500">Can teach you: </span>
-                            <span className="font-semibold text-slate-700">
-                              {student.match.theyCanTeachYou.map((s) => s.skillName).join(', ')}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                      {student.match.youCanTeachThem.length > 0 && (
-                        <div className="flex items-start space-x-2">
-                          <div className="w-5 h-5 rounded bg-violet-50 flex items-center justify-center shrink-0 mt-0.5">
-                            <Target className="w-3 h-3 text-violet-600" />
-                          </div>
-                          <div className="text-[11px]">
-                            <span className="text-slate-500">You can teach: </span>
-                            <span className="font-semibold text-slate-700">
-                              {student.match.youCanTeachThem.map((s) => s.skillName).join(', ')}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                      {student.match.theyCanTeachYou.length === 0 && student.match.youCanTeachThem.length === 0 && (
-                        <div className="flex items-start space-x-2">
-                          <div className="w-5 h-5 rounded bg-slate-50 flex items-center justify-center shrink-0 mt-0.5">
-                            <Layers className="w-3 h-3 text-slate-400" />
-                          </div>
-                          <div className="text-[11px] text-slate-400 italic">
-                            No direct skill overlap — academic affinity score only
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Skills Pills (compact) */}
-                    <div className="flex flex-wrap gap-1.5">
-                      {student.offeredSkills.slice(0, 4).map((s) => (
-                        <span
-                          key={s.id}
-                          className="text-[10px] font-medium bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md"
-                        >
-                          {s.skill.name}
-                        </span>
-                      ))}
-                      {student.offeredSkills.length > 4 && (
-                        <span className="text-[10px] font-medium bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md">
-                          +{student.offeredSkills.length - 4} more
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Footer */}
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                      <span className="text-[11px] text-slate-400 font-mono">{student.rollNumber}</span>
-                      <span className="text-[11px] font-bold text-indigo-600 group-hover:text-indigo-800 flex items-center gap-1 transition">
-                        View Profile <Eye className="w-3 h-3" />
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center space-x-4 pt-4">
-                <button
-                  disabled={page <= 1}
-                  onClick={() => setPage(page - 1)}
-                  className="inline-flex items-center space-x-1 px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                  <span>Previous</span>
-                </button>
-                <span className="text-xs font-bold text-slate-600">
-                  {page} / {totalPages}
-                </span>
-                <button
-                  disabled={page >= totalPages}
-                  onClick={() => setPage(page + 1)}
-                  className="inline-flex items-center space-x-1 px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
-                >
-                  <span>Next</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            )}
-          </>
-        )}
-      </main>
-
-      {/* ===== Full Profile Modal ===== */}
-      {selectedStudent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={closeModal} />
-
-          {/* Modal Content */}
-          <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-slate-200">
-            {/* Close Button */}
-            <button
-              onClick={closeModal}
-              className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition"
-            >
-              <X className="w-4 h-4 text-slate-600" />
-            </button>
-
-            {modalLoading ? (
-              <div className="flex items-center justify-center py-32">
-                <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
-              </div>
-            ) : modalStudent ? (
-              <div className="p-6 sm:p-8 space-y-6">
-                {/* Profile Header */}
-                <div className="flex items-start space-x-4">
-                  <div
-                    className={`w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white font-bold text-2xl flex items-center justify-center shadow-lg ring-3 ring-offset-2 ${matchRingColor(modalStudent.match.score)}`}
-                  >
-                    {modalStudent.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1">
-                    <h2 className="text-xl font-extrabold text-slate-900">{modalStudent.name}</h2>
-                    <div className="flex items-center space-x-3 text-xs text-slate-500 mt-1">
-                      <span className="flex items-center gap-1">
-                        <GraduationCap className="w-3.5 h-3.5 text-slate-400" />
-                        {modalStudent.department}
-                      </span>
-                      <span>•</span>
-                      <span className="flex items-center gap-1">
-                        <Layers className="w-3.5 h-3.5 text-slate-400" />
-                        Semester {modalStudent.semester}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-3 text-xs text-slate-400 mt-1">
-                      <span className="flex items-center gap-1 font-mono">
-                        <Hash className="w-3 h-3" />
-                        {modalStudent.rollNumber}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Match Score */}
-                  <div
-                    className={`flex flex-col items-center px-4 py-3 rounded-2xl border ${matchBadgeColor(modalStudent.match.score)}`}
-                  >
-                    <span className="text-2xl font-extrabold leading-none">{modalStudent.match.score}%</span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider mt-1">
-                      {modalStudent.match.isMutual ? '⇄ Mutual' : 'Match'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Bio */}
-                {modalStudent.bio && (
-                  <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-                    <p className="text-xs text-slate-600 italic leading-relaxed">"{modalStudent.bio}"</p>
-                  </div>
-                )}
-
-                {requestSent ? (
-                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
-                    Exchange request sent. You can follow its status in <a className="font-bold underline" href="/exchanges">Exchange Requests</a>.
-                  </div>
-                ) : showRequestComposer ? (
-                  <form onSubmit={sendExchangeRequest} className="rounded-2xl border border-indigo-200 bg-indigo-50/60 p-5 space-y-4">
-                    <div>
-                      <h3 className="font-bold text-slate-900">Propose a skill exchange</h3>
-                      <p className="mt-1 text-xs text-slate-500">Choose what you can teach and one of your learning goals that {modalStudent.name} offers.</p>
-                    </div>
-                    {requestError && <p role="alert" className="rounded-lg bg-rose-50 border border-rose-200 p-2.5 text-xs text-rose-700">{requestError}</p>}
-                    <div className="grid sm:grid-cols-2 gap-3">
-                      <label className="text-xs font-semibold text-slate-600">
-                        You can teach
-                        <select value={requestOfferedId} onChange={(event) => setRequestOfferedId(event.target.value)} required className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm">
-                          <option value="">Choose an offered skill</option>
-                          {mySkills?.offeredSkills.map((skill) => <option key={skill.id} value={skill.id}>{skill.skill.name} · {skill.proficiency}</option>)}
-                        </select>
-                      </label>
-                      <label className="text-xs font-semibold text-slate-600">
-                        You want to learn
-                        <select value={requestWantedId} onChange={(event) => setRequestWantedId(event.target.value)} required className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm">
-                          <option value="">Choose a skill {modalStudent.name} offers</option>
-                          {requestableWantedSkills.map((skill) => <option key={skill.id} value={skill.id}>{skill.skill.name} · {skill.priority} priority</option>)}
-                        </select>
-                      </label>
-                    </div>
-                    {(!mySkills?.offeredSkills.length || !requestableWantedSkills.length) && (
-                      <p className="text-xs text-amber-700">To propose this exchange, add an offered skill and a wanted skill that this student offers to your profile.</p>
-                    )}
-                    <label className="block text-xs font-semibold text-slate-600">
-                      Message (optional)
-                      <textarea value={requestMessage} onChange={(event) => setRequestMessage(event.target.value)} maxLength={1000} rows={3} placeholder="Introduce yourself and suggest how you could exchange skills…" className="mt-1 w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal" />
-                    </label>
-                    <div className="flex flex-wrap justify-end gap-2">
-                      <button type="button" onClick={() => setShowRequestComposer(false)} className="rounded-lg px-4 py-2 text-xs font-bold text-slate-600 hover:bg-white">Back to profile</button>
-                      <button type="submit" disabled={requestLoading || !requestOfferedId || !requestWantedId} className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-50">
-                        {requestLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowLeftRight className="w-3.5 h-3.5" />}
-                        Send request
-                      </button>
-                    </div>
-                  </form>
-                ) : (
-                  <button onClick={() => void openRequestComposer()} disabled={requestLoading} className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-60">
-                    {requestLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowLeftRight className="w-4 h-4" />}
-                    Send Exchange Request
-                  </button>
-                )}
-
-                {/* Match Breakdown */}
-                <div className="bg-gradient-to-br from-indigo-50/50 to-violet-50/50 rounded-2xl p-5 border border-indigo-100 space-y-4">
-                  <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-indigo-600" />
-                    Skill Exchange Compatibility Breakdown
-                  </h3>
-
-                  {/* They Can Teach You */}
-                  {modalStudent.match.theyCanTeachYou.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="text-[11px] font-bold text-blue-700 flex items-center gap-1.5">
-                        <BookOpen className="w-3.5 h-3.5" />
-                        Skills they can teach you:
-                      </div>
-                      <div className="space-y-1.5">
-                        {modalStudent.match.theyCanTeachYou.map((s) => (
-                          <div
-                            key={s.skillId}
-                            className="flex items-center justify-between bg-white rounded-xl px-3 py-2 border border-blue-100"
-                          >
-                            <span className="text-xs font-semibold text-slate-800">{s.skillName}</span>
-                            <div className="flex items-center space-x-2">
-                              {s.theirProficiency && (
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${proficiencyBadge(s.theirProficiency)}`}>
-                                  {s.theirProficiency}
-                                </span>
-                              )}
-                              {s.yourPriority && (
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${priorityBadge(s.yourPriority)}`}>
-                                  Your {s.yourPriority} Priority
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* You Can Teach Them */}
-                  {modalStudent.match.youCanTeachThem.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="text-[11px] font-bold text-violet-700 flex items-center gap-1.5">
-                        <Target className="w-3.5 h-3.5" />
-                        Skills you can teach them:
-                      </div>
-                      <div className="space-y-1.5">
-                        {modalStudent.match.youCanTeachThem.map((s) => (
-                          <div
-                            key={s.skillId}
-                            className="flex items-center justify-between bg-white rounded-xl px-3 py-2 border border-violet-100"
-                          >
-                            <span className="text-xs font-semibold text-slate-800">{s.skillName}</span>
-                            <div className="flex items-center space-x-2">
-                              {s.yourProficiency && (
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${proficiencyBadge(s.yourProficiency)}`}>
-                                  Your {s.yourProficiency}
-                                </span>
-                              )}
-                              {s.theirPriority && (
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${priorityBadge(s.theirPriority)}`}>
-                                  Their {s.theirPriority} Priority
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Common Learning Interests */}
-                  {modalStudent.match.commonInterests.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="text-[11px] font-bold text-amber-700 flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5" />
-                        Study Buddy — Shared learning goals:
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {modalStudent.match.commonInterests.map((s) => (
-                          <span
-                            key={s.skillId}
-                            className="text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-lg"
-                          >
-                            {s.skillName}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Reasons */}
-                  <div className="pt-2 border-t border-indigo-100 space-y-1">
-                    {modalStudent.match.reasons.map((reason, i) => (
-                      <div key={i} className="flex items-start space-x-2 text-[11px] text-slate-600">
-                        <CheckCircle2 className="w-3 h-3 text-indigo-500 mt-0.5 shrink-0" />
-                        <span>{reason}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Full Skill Portfolio */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Offered Skills */}
-                  <div className="bg-white rounded-2xl p-4 border border-slate-200 space-y-3">
-                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                      Skills They Teach ({modalStudent.offeredSkills.length})
-                    </h4>
-                    {modalStudent.offeredSkills.length === 0 ? (
-                      <p className="text-[11px] text-slate-400 italic">No offered skills listed</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {modalStudent.offeredSkills.map((s) => (
-                          <div key={s.id} className="flex items-center justify-between">
-                            <span className="text-xs text-slate-700 font-medium">{s.skill.name}</span>
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${proficiencyBadge(s.proficiency || '')}`}>
-                              {s.proficiency}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Wanted Skills */}
-                  <div className="bg-white rounded-2xl p-4 border border-slate-200 space-y-3">
-                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                      Skills They Want ({modalStudent.wantedSkills.length})
-                    </h4>
-                    {modalStudent.wantedSkills.length === 0 ? (
-                      <p className="text-[11px] text-slate-400 italic">No wanted skills listed</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {modalStudent.wantedSkills.map((s) => (
-                          <div key={s.id} className="flex items-center justify-between">
-                            <span className="text-xs text-slate-700 font-medium">{s.skill.name}</span>
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${priorityBadge(s.priority || '')}`}>
-                              {s.priority}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ) : null}
+          <div className="p-4 sm:p-5">
+            <p className="text-caption-sm text-muted-foreground">High match</p>
+            <p className="mt-1 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">{stats.highMatches}</p>
           </div>
         </div>
       )}
+
+      <div className="grid gap-6 xl:grid-cols-[16rem_minmax(0,1fr)] xl:items-start">
+        {/* Desktop filter rail */}
+        <aside className="hidden xl:block">
+          <div className="sticky top-6 rounded-xl border border-border bg-card p-4">
+            <FiltersPanel {...filterProps} />
+          </div>
+        </aside>
+
+        <div className="min-w-0 space-y-4">
+          {/* Toolbar */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="search"
+                aria-label="Search peers"
+                placeholder="Search by name, skill, department, or roll number…"
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className="gap-2 xl:hidden"
+                aria-expanded={showFilters}
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                Filters
+                {hasActiveFilters && <span className="h-1.5 w-1.5 rounded-full bg-foreground" />}
+              </Button>
+
+              <Select
+                value={sortBy}
+                onValueChange={(value) => {
+                  setSortBy(value);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="w-auto min-w-[9.5rem] gap-2 text-caption">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent align="end">
+                  <SelectItem value="score_desc">Highest match</SelectItem>
+                  <SelectItem value="score_asc">Lowest match</SelectItem>
+                  <SelectItem value="name_asc">Name (A–Z)</SelectItem>
+                  <SelectItem value="skills_desc">Most skills</SelectItem>
+                  <SelectItem value="newest">Newest first</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {hasActiveFilters && (
+                <Button variant="ghost" onClick={clearAllFilters} className="hidden gap-1.5 px-2.5 text-muted-foreground sm:inline-flex">
+                  <X className="h-3.5 w-3.5" />
+                  Clear
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Mobile filter panel */}
+          {showFilters && (
+            <div className="rounded-xl border border-border bg-card p-4 xl:hidden">
+              <FiltersPanel {...filterProps} />
+            </div>
+          )}
+
+          {/* Results */}
+          {loading ? (
+            <DirectorySkeleton />
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border px-6 py-20 text-center">
+              <AlertCircle className="h-6 w-6 text-muted-foreground" />
+              <p className="mt-3 text-body-sm font-medium text-foreground">Could not load the directory</p>
+              <p className="mt-1 text-caption text-muted-foreground">{error}</p>
+              <Button variant="outline" size="sm" onClick={() => void fetchStudents()} className="mt-4">
+                <RefreshCw className="h-3.5 w-3.5" />
+                Try again
+              </Button>
+            </div>
+          ) : students.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border px-6 py-20 text-center">
+              <Compass className="h-6 w-6 text-muted-foreground" />
+              <p className="mt-3 text-body-sm font-medium text-foreground">No peers match these filters</p>
+              <p className="mt-1 max-w-sm text-caption leading-relaxed text-muted-foreground">
+                Try widening your search, or check back once more students have listed their skills.
+              </p>
+              {hasActiveFilters && (
+                <Button variant="outline" size="sm" onClick={clearAllFilters} className="mt-4">
+                  Clear filters
+                </Button>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between gap-3 text-caption text-muted-foreground">
+                <span>
+                  Showing <span className="font-medium text-foreground">{students.length}</span> of{' '}
+                  <span className="font-medium text-foreground">{totalCount}</span> peers
+                </span>
+                <span className="font-mono text-caption-sm">
+                  {page} / {totalPages}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-3">
+                {students.map((student) => (
+                  <button
+                    key={student.id}
+                    type="button"
+                    onClick={() => void openProfile(student)}
+                    className={cn(
+                      'group flex h-full flex-col rounded-xl border bg-card p-4 text-left outline-none transition-colors duration-normal sm:p-5',
+                      'hover:border-foreground/25 hover:shadow-card-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                      student.match.isMutual ? 'border-success/30' : 'border-border'
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary text-caption font-semibold text-secondary-foreground">
+                          {student.name.charAt(0).toUpperCase()}
+                        </span>
+                        <div className="min-w-0">
+                          <h2 className="truncate text-caption font-semibold text-foreground transition-colors group-hover:underline group-hover:decoration-border group-hover:underline-offset-4">
+                            {student.name}
+                          </h2>
+                          <p className="mt-0.5 flex items-center gap-1 truncate text-caption-sm text-muted-foreground">
+                            <GraduationCap className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{student.department}</span>
+                            <span className="text-border">·</span>
+                            <span className="shrink-0">Sem {student.semester}</span>
+                          </p>
+                        </div>
+                      </div>
+
+                      <span className={cn('flex shrink-0 flex-col items-center rounded-md border px-2 py-1 text-center', matchTone(student.match.score))}>
+                        <span className="text-sm font-semibold leading-none">{student.match.score}%</span>
+                        <span className="mt-0.5 text-[0.6rem] uppercase tracking-[0.08em] opacity-70">match</span>
+                      </span>
+                    </div>
+
+                    {student.match.isMutual && (
+                      <Badge variant="success" className="mt-3 w-fit font-normal">
+                        <ArrowLeftRight className="h-3 w-3" />
+                        Mutual exchange available
+                      </Badge>
+                    )}
+
+                    {student.bio && (
+                      <p className="mt-3 line-clamp-2 text-caption leading-relaxed text-muted-foreground">{student.bio}</p>
+                    )}
+
+                    <div className="mt-3 space-y-2 border-t border-border pt-3 text-caption">
+                      {student.match.theyCanTeachYou.length > 0 && (
+                        <div className="flex items-start gap-2">
+                          <BookOpen className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                          <p className="min-w-0 text-muted-foreground">
+                            <span className="text-muted-foreground">Can teach you </span>
+                            <span className="font-medium text-foreground">
+                              {student.match.theyCanTeachYou.map((skill) => skill.skillName).join(', ')}
+                            </span>
+                          </p>
+                        </div>
+                      )}
+                      {student.match.youCanTeachThem.length > 0 && (
+                        <div className="flex items-start gap-2">
+                          <Target className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                          <p className="min-w-0 text-muted-foreground">
+                            <span className="text-muted-foreground">You can teach </span>
+                            <span className="font-medium text-foreground">
+                              {student.match.youCanTeachThem.map((skill) => skill.skillName).join(', ')}
+                            </span>
+                          </p>
+                        </div>
+                      )}
+                      {student.match.theyCanTeachYou.length === 0 && student.match.youCanTeachThem.length === 0 && (
+                        <div className="flex items-start gap-2 text-muted-foreground">
+                          <Layers className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                          <span>No direct skill overlap — academic affinity only</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {student.offeredSkills.slice(0, 4).map((skill) => (
+                        <Badge key={skill.id} variant="outline" className="font-normal text-muted-foreground">
+                          {skill.skill.name}
+                        </Badge>
+                      ))}
+                      {student.offeredSkills.length > 4 && (
+                        <Badge variant="muted" className="font-normal">
+                          +{student.offeredSkills.length - 4}
+                        </Badge>
+                      )}
+                    </div>
+
+                    <div className="mt-auto flex items-center justify-between gap-3 border-t border-border pt-3 text-caption-sm">
+                      <span className="truncate font-mono text-muted-foreground">{student.rollNumber}</span>
+                      <span className="inline-flex shrink-0 items-center gap-1 font-medium text-foreground">
+                        View profile
+                        <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} showFirstLast className="pt-2" />
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* ===== Student profile dialog ===== */}
+      <Dialog open={!!selectedStudent} onOpenChange={(open) => !open && closeModal()}>
+        <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto p-0">
+          {modalLoading ? (
+            <div className="flex items-center justify-center py-24">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : modalStudent ? (
+            <div className="p-5 sm:p-7">
+              <DialogHeader className="pr-8 text-left">
+                <div className="flex items-start gap-4">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-secondary text-body font-semibold text-secondary-foreground">
+                    {modalStudent.name.charAt(0).toUpperCase()}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <DialogTitle className="text-heading-lg">{modalStudent.name}</DialogTitle>
+                    <DialogDescription className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-caption">
+                      <span className="inline-flex items-center gap-1">
+                        <GraduationCap className="h-3.5 w-3.5" />
+                        {modalStudent.department}
+                      </span>
+                      <span className="text-border">·</span>
+                      <span className="inline-flex items-center gap-1">
+                        <Layers className="h-3.5 w-3.5" />
+                        Semester {modalStudent.semester}
+                      </span>
+                      <span className="text-border">·</span>
+                      <span className="inline-flex items-center gap-1 font-mono">
+                        <Hash className="h-3 w-3" />
+                        {modalStudent.rollNumber}
+                      </span>
+                    </DialogDescription>
+                  </div>
+                  <span className={cn('hidden shrink-0 flex-col items-center rounded-lg border px-3 py-2 text-center sm:flex', matchTone(modalStudent.match.score))}>
+                    <span className="text-lg font-semibold leading-none">{modalStudent.match.score}%</span>
+                    <span className="mt-1 text-[0.6rem] uppercase tracking-[0.08em] opacity-70">
+                      {modalStudent.match.isMutual ? 'mutual' : 'match'}
+                    </span>
+                  </span>
+                </div>
+              </DialogHeader>
+
+              <div className="mt-6 space-y-6">
+                {modalStudent.bio && (
+                  <p className="rounded-lg border border-border bg-muted/40 p-4 text-caption leading-relaxed text-muted-foreground">
+                    {modalStudent.bio}
+                  </p>
+                )}
+
+                {requestSent ? (
+                  <div className="flex items-start gap-2 rounded-lg border border-success/20 bg-success-muted p-3 text-caption text-success">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>
+                      Request sent. Track its status in{' '}
+                      <Link to="/exchanges" className="font-semibold underline underline-offset-2">
+                        Exchange requests
+                      </Link>
+                      .
+                    </span>
+                  </div>
+                ) : showRequestComposer ? (
+                  <form onSubmit={sendExchangeRequest} className="space-y-4 rounded-xl border border-border bg-muted/30 p-4 sm:p-5">
+                    <div>
+                      <h3 className="text-heading-sm font-semibold text-foreground">Propose an exchange</h3>
+                      <p className="mt-1 text-caption leading-relaxed text-muted-foreground">
+                        Choose what you can teach and one of your learning goals that {modalStudent.name} offers.
+                      </p>
+                    </div>
+
+                    {requestError && (
+                      <Alert variant="destructive">
+                        <AlertDescription>{requestError}</AlertDescription>
+                      </Alert>
+                    )}
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label className="text-caption-sm text-muted-foreground">You can teach</Label>
+                        <Select value={requestOfferedId} onValueChange={setRequestOfferedId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose an offered skill" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {mySkills?.offeredSkills.map((skill) => (
+                              <SelectItem key={skill.id} value={skill.id}>
+                                {skill.skill.name} · {skill.proficiency}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-caption-sm text-muted-foreground">You want to learn</Label>
+                        <Select value={requestWantedId} onValueChange={setRequestWantedId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder={`A skill ${modalStudent.name} offers`} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {requestableWantedSkills.map((skill) => (
+                              <SelectItem key={skill.id} value={skill.id}>
+                                {skill.skill.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {(!mySkills?.offeredSkills.length || !requestableWantedSkills.length) && (
+                      <p className="text-caption leading-relaxed text-warning">
+                        Add an offered skill and a wanted skill that this student teaches to your profile first.
+                      </p>
+                    )}
+
+                    <div className="space-y-2">
+                      <Label className="text-caption-sm text-muted-foreground">Message (optional)</Label>
+                      <Textarea
+                        value={requestMessage}
+                        onChange={(event) => setRequestMessage(event.target.value)}
+                        maxLength={1000}
+                        rows={3}
+                        placeholder="Introduce yourself and suggest how you could exchange skills…"
+                      />
+                    </div>
+
+                    <DialogFooter className="gap-2">
+                      <Button type="button" variant="ghost" onClick={() => setShowRequestComposer(false)}>
+                        Back
+                      </Button>
+                      <Button type="submit" disabled={requestLoading || !requestOfferedId || !requestWantedId}>
+                        {requestLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowLeftRight className="h-3.5 w-3.5" />}
+                        Send request
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                ) : (
+                  <div className="space-y-2">
+                    {requestError && (
+                      <Alert variant="destructive">
+                        <AlertDescription>{requestError}</AlertDescription>
+                      </Alert>
+                    )}
+                    <Button className="w-full" onClick={() => void openRequestComposer()} disabled={requestLoading}>
+                      {requestLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowLeftRight className="h-4 w-4" />}
+                      Propose a skill exchange
+                    </Button>
+                  </div>
+                )}
+
+                {/* Compatibility */}
+                <div className="space-y-4 rounded-xl border border-border bg-muted/30 p-4 sm:p-5">
+                  <h3 className="flex items-center gap-2 text-caption-sm font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                    <Zap className="h-3.5 w-3.5" />
+                    Compatibility
+                  </h3>
+
+                  {modalStudent.match.theyCanTeachYou.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="flex items-center gap-1.5 text-caption font-medium text-foreground">
+                        <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
+                        They can teach you
+                      </p>
+                      <div className="space-y-1.5">
+                        {modalStudent.match.theyCanTeachYou.map((skill) => (
+                          <div key={skill.skillId} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-background px-3 py-2">
+                            <span className="text-caption font-medium text-foreground">{skill.skillName}</span>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {skill.theirProficiency && (
+                                <Badge variant="outline" className={cn('font-normal', proficiencyBadge(skill.theirProficiency))}>
+                                  {skill.theirProficiency}
+                                </Badge>
+                              )}
+                              {skill.yourPriority && (
+                                <Badge variant="outline" className={cn('font-normal', priorityBadge(skill.yourPriority))}>
+                                  Your {skill.yourPriority.toLowerCase()} priority
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {modalStudent.match.youCanTeachThem.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="flex items-center gap-1.5 text-caption font-medium text-foreground">
+                        <Target className="h-3.5 w-3.5 text-muted-foreground" />
+                        You can teach them
+                      </p>
+                      <div className="space-y-1.5">
+                        {modalStudent.match.youCanTeachThem.map((skill) => (
+                          <div key={skill.skillId} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-background px-3 py-2">
+                            <span className="text-caption font-medium text-foreground">{skill.skillName}</span>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {skill.yourProficiency && (
+                                <Badge variant="outline" className={cn('font-normal', proficiencyBadge(skill.yourProficiency))}>
+                                  Your {skill.yourProficiency.toLowerCase()}
+                                </Badge>
+                              )}
+                              {skill.theirPriority && (
+                                <Badge variant="outline" className={cn('font-normal', priorityBadge(skill.theirPriority))}>
+                                  Their {skill.theirPriority.toLowerCase()} priority
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {modalStudent.match.commonInterests.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="flex items-center gap-1.5 text-caption font-medium text-foreground">
+                        <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
+                        Shared learning goals
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {modalStudent.match.commonInterests.map((skill) => (
+                          <Badge key={skill.skillId} variant="outline" className="font-normal text-muted-foreground">
+                            {skill.skillName}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {modalStudent.match.reasons.length > 0 && (
+                    <div className="space-y-1.5 border-t border-border pt-3">
+                      {modalStudent.match.reasons.map((reason, index) => (
+                        <p key={index} className="flex items-start gap-2 text-caption leading-relaxed text-muted-foreground">
+                          <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-success" />
+                          {reason}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Full skill portfolio */}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-xl border border-border p-4">
+                    <h3 className="text-caption font-medium text-foreground">Skills they teach</h3>
+                    <div className="mt-3 space-y-2">
+                      {modalStudent.offeredSkills.length === 0 ? (
+                        <p className="text-caption text-muted-foreground">No offered skills listed.</p>
+                      ) : (
+                        modalStudent.offeredSkills.map((skill) => (
+                          <div key={skill.id} className="flex items-center justify-between gap-2">
+                            <span className="truncate text-caption text-foreground">{skill.skill.name}</span>
+                            <Badge variant="outline" className={cn('shrink-0 font-normal', proficiencyBadge(skill.proficiency))}>
+                              {skill.proficiency}
+                            </Badge>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-border p-4">
+                    <h3 className="text-caption font-medium text-foreground">Skills they want</h3>
+                    <div className="mt-3 space-y-2">
+                      {modalStudent.wantedSkills.length === 0 ? (
+                        <p className="text-caption text-muted-foreground">No wanted skills listed.</p>
+                      ) : (
+                        modalStudent.wantedSkills.map((skill) => (
+                          <div key={skill.id} className="flex items-center justify-between gap-2">
+                            <span className="truncate text-caption text-foreground">{skill.skill.name}</span>
+                            <Badge variant="outline" className={cn('shrink-0 font-normal', priorityBadge(skill.priority))}>
+                              {skill.priority}
+                            </Badge>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-24 text-center">
+              <Users className="h-6 w-6 text-muted-foreground" />
+              <p className="mt-3 text-body-sm text-muted-foreground">Could not load this profile.</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

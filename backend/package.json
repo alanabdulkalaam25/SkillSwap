@@ -12,6 +12,7 @@
     "prisma:push": "prisma db push",
     "prisma:studio": "prisma studio",
     "seed": "tsx prisma/seed.ts",
+    "seed:admin": "tsx prisma/seed-admin.ts",
     "test:phase1": "tsx src/test-phase1.ts",
     "test:phase2": "tsx src/test-phase2.ts",
     "test:phase3": "tsx src/test-phase3.ts",

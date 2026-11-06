@@ -1,5 +1,5 @@
 {
-  "name": "skillswap-monorepo",
+  "name": "skillswap",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -7,7 +7,7 @@
     "dev:backend": "pnpm --filter skillswap-backend dev",
     "dev:frontend": "pnpm --filter skillswap-frontend dev",
     "build": "pnpm --filter skillswap-backend build && pnpm --filter skillswap-frontend build",
-    "db:start": "\"C:\\Program Files\\PostgreSQL\\18\\bin\\pg_ctl.exe\" -D backend/postgres_data -o \"-p 5433\" -l backend/postgres.log start",
+    "db:start": "\"C:\\Program Files\\PostgreSQL\\18\\bin\\pg_ctl.exe\" -D backend/postgres_data -o \"-p 5432\" -l backend/postgres.log start",
     "db:stop": "\"C:\\Program Files\\PostgreSQL\\18\\bin\\pg_ctl.exe\" -D backend/postgres_data stop"
   }
 }

@@ -59,15 +59,15 @@ export const MOCK_STUDENTS = [
     department: 'Computer Science',
     semester: 6,
     rollNumber: '22CS008',
-    bio: 'AI & ML enthusiast. Working on PyTorch, computer vision, and neural style transfer. Looking to learn React to build clean frontends for my models.',
+    bio: 'AI & ML enthusiast. Working on PyTorch, computer vision, and neural style transfer. Looking to learn UI/UX design so my model tools are easier to use.',
     offered: [
       { name: 'Machine Learning', proficiency: 'EXPERT' as ProficiencyLevel, description: 'Built CNN and vision models; can teach feature engineering and model training' },
       { name: 'Deep Learning', proficiency: 'ADVANCED' as ProficiencyLevel, description: 'PyTorch, Transformers, neural network math' },
       { name: 'Python', proficiency: 'EXPERT' as ProficiencyLevel, description: 'Advanced Python, NumPy, Pandas, Scikit-Learn' },
     ],
     wanted: [
-      { name: 'React', priority: 'HIGH' as PriorityLevel, notes: 'Want to build modern React dashboards for my AI pipelines' },
-      { name: 'Next.js', priority: 'MEDIUM' as PriorityLevel, notes: 'SSR and full-stack React' },
+      { name: 'UI/UX Design', priority: 'HIGH' as PriorityLevel, notes: 'Design clear dashboards for my AI pipelines' },
+      { name: 'React', priority: 'MEDIUM' as PriorityLevel, notes: 'Build modern frontends for my models' },
     ],
   },
   {
@@ -156,6 +156,136 @@ export const MOCK_STUDENTS = [
     wanted: [
       { name: 'Flutter', priority: 'HIGH' as PriorityLevel, notes: 'Building a cross-platform mobile client for home cloud' },
       { name: 'UI/UX Design', priority: 'MEDIUM' as PriorityLevel, notes: 'Mobile interface heuristics' },
+    ],
+  },
+  {
+    name: 'Meera Joshi', email: 'meera.joshi@student.college.edu', password: 'Password123!',
+    department: 'Electronics & Communication', semester: 5, rollNumber: '23EC014',
+    bio: 'I build small sensor projects with Arduino and document the results for our robotics club. I would love help turning our prototype pages into a polished web interface.',
+    offered: [
+      { name: 'Arduino & Embedded C', proficiency: 'ADVANCED' as ProficiencyLevel, description: 'Sensor wiring, serial debugging, and microcontroller basics' },
+      { name: 'MATLAB & Simulink', proficiency: 'INTERMEDIATE' as ProficiencyLevel, description: 'Signal plots and simple control-system simulations' },
+    ],
+    wanted: [
+      { name: 'React', priority: 'HIGH' as PriorityLevel, notes: 'Build a dashboard for our lab sensor readings' },
+      { name: 'Figma', priority: 'MEDIUM' as PriorityLevel, notes: 'Plan clearer screens before coding' },
+    ],
+  },
+  {
+    name: 'Kabir Khan', email: 'kabir.khan@student.college.edu', password: 'Password123!',
+    department: 'Civil Engineering', semester: 6, rollNumber: '22CE031',
+    bio: 'Interested in sustainable structures and clear technical drawings. I help classmates get started with CAD and would like to learn how to automate routine calculations.',
+    offered: [
+      { name: 'AutoCAD', proficiency: 'ADVANCED' as ProficiencyLevel, description: 'Layering, dimensioning, and construction drawing sets' },
+      { name: 'Technical Writing & Documentation', proficiency: 'INTERMEDIATE' as ProficiencyLevel, description: 'Organizing lab reports and project documentation' },
+    ],
+    wanted: [
+      { name: 'Python', priority: 'HIGH' as PriorityLevel, notes: 'Automate repetitive quantity calculations' },
+      { name: 'SQL & Database Design', priority: 'LOW' as PriorityLevel, notes: 'Understand how project records can be stored' },
+    ],
+  },
+  {
+    name: 'Sana Rao', email: 'sana.rao@student.college.edu', password: 'Password123!',
+    department: 'Artificial Intelligence & Data Science', semester: 4, rollNumber: '24AD022',
+    bio: 'Exploring language models through small student projects. I enjoy explaining Python notebooks and want to get better at presenting model results to non-technical audiences.',
+    offered: [
+      { name: 'Natural Language Processing', proficiency: 'INTERMEDIATE' as ProficiencyLevel, description: 'Tokenization, text classification, and evaluation basics' },
+      { name: 'Python', proficiency: 'ADVANCED' as ProficiencyLevel, description: 'Pandas notebooks, plotting, and clean project structure' },
+    ],
+    wanted: [
+      { name: 'Public Speaking & Presentations', priority: 'HIGH' as PriorityLevel, notes: 'Make my project demo clearer and more confident' },
+      { name: 'Figma', priority: 'MEDIUM' as PriorityLevel, notes: 'Create a simple interface for a text classifier' },
+    ],
+  },
+  {
+    name: 'Ishaan Desai', email: 'ishaan.desai@student.college.edu', password: 'Password123!',
+    department: 'Mechanical Engineering', semester: 7, rollNumber: '21ME026',
+    bio: 'Part of the campus robotics team, focusing on chassis design and motion planning. I can help with CAD and want to learn software tools for presenting our prototypes online.',
+    offered: [
+      { name: 'Robotics & ROS', proficiency: 'ADVANCED' as ProficiencyLevel, description: 'ROS2 navigation, coordinate frames, and robot simulation' },
+      { name: '3D Modeling & Blender', proficiency: 'INTERMEDIATE' as ProficiencyLevel, description: 'Mechanical assemblies, materials, and product renders' },
+    ],
+    wanted: [
+      { name: 'React', priority: 'HIGH' as PriorityLevel, notes: 'Create a live project showcase for our team' },
+      { name: 'Git & GitHub', priority: 'MEDIUM' as PriorityLevel, notes: 'Collaborate more reliably on code and CAD exports' },
+    ],
+  },
+  {
+    name: 'Tara Menon', email: 'tara.menon@student.college.edu', password: 'Password123!',
+    department: 'Management & Business Studies', semester: 3, rollNumber: '24MB017',
+    bio: 'I enjoy turning research into concise presentations and helping teams prepare for interviews. I am learning to work with data so our student club can make better decisions.',
+    offered: [
+      { name: 'Public Speaking & Presentations', proficiency: 'ADVANCED' as ProficiencyLevel, description: 'Story structure, slide clarity, and delivery practice' },
+      { name: 'Resume & Interview Prep', proficiency: 'INTERMEDIATE' as ProficiencyLevel, description: 'Peer resume reviews and mock interview practice' },
+    ],
+    wanted: [
+      { name: 'SQL & Database Design', priority: 'HIGH' as PriorityLevel, notes: 'Query membership and event data for our club' },
+      { name: 'Data Structures & Algorithms', priority: 'LOW' as PriorityLevel, notes: 'Build confidence with technical interview basics' },
+    ],
+  },
+  {
+    name: 'Nisha Kulkarni', email: 'nisha.kulkarni@student.college.edu', password: 'Password123!',
+    department: 'Applied Mathematics & Computing', semester: 5, rollNumber: '23AM009',
+    bio: 'Curious about how mathematical models become useful tools. I tutor classmates in Python and data structures and want to explore computer vision with a study partner.',
+    offered: [
+      { name: 'Data Structures & Algorithms', proficiency: 'ADVANCED' as ProficiencyLevel, description: 'Complexity, graph traversal, and problem-solving practice' },
+      { name: 'Python', proficiency: 'ADVANCED' as ProficiencyLevel, description: 'Scientific Python and introductory numerical methods' },
+    ],
+    wanted: [
+      { name: 'Computer Vision', priority: 'HIGH' as PriorityLevel, notes: 'Learn image processing through a small project' },
+      { name: 'Machine Learning', priority: 'MEDIUM' as PriorityLevel, notes: 'Connect statistical learning with practical models' },
+    ],
+  },
+  {
+    name: 'Farhan Ali', email: 'farhan.ali@student.college.edu', password: 'Password123!',
+    department: 'Electronics & Communication', semester: 6, rollNumber: '22EC041',
+    bio: 'Working on a campus energy-monitoring prototype that combines microcontrollers and a small API. Happy to share what I know about backend basics and learn from designers.',
+    offered: [
+      { name: 'Node.js', proficiency: 'INTERMEDIATE' as ProficiencyLevel, description: 'REST endpoints, request validation, and async workflows' },
+      { name: 'Java', proficiency: 'ADVANCED' as ProficiencyLevel, description: 'OOP fundamentals and practical debugging' },
+    ],
+    wanted: [
+      { name: 'Internet of Things (IoT)', priority: 'HIGH' as PriorityLevel, notes: 'Improve device-to-server communication' },
+      { name: 'UI/UX Design', priority: 'MEDIUM' as PriorityLevel, notes: 'Make the energy dashboard easier to use' },
+    ],
+  },
+  {
+    name: 'Kavya Reddy', email: 'kavya.reddy@student.college.edu', password: 'Password123!',
+    department: 'Design & Architecture', semester: 5, rollNumber: '23DA028',
+    bio: 'Architecture student interested in accessible spaces and visual storytelling. I can help teams with early-stage visual concepts and want to strengthen my technical drawing workflow.',
+    offered: [
+      { name: 'Figma', proficiency: 'ADVANCED' as ProficiencyLevel, description: 'Clickable prototypes, design systems, and critique' },
+      { name: 'Graphic Design', proficiency: 'ADVANCED' as ProficiencyLevel, description: 'Poster layouts, typography, and visual hierarchy' },
+    ],
+    wanted: [
+      { name: 'AutoCAD', priority: 'HIGH' as PriorityLevel, notes: 'Speed up drafting and annotation work' },
+      { name: '3D Modeling & Blender', priority: 'MEDIUM' as PriorityLevel, notes: 'Create more expressive studio renders' },
+    ],
+  },
+  {
+    name: 'Aditya Bose', email: 'aditya.bose@student.college.edu', password: 'Password123!',
+    department: 'Information Technology', semester: 4, rollNumber: '24IT036',
+    bio: 'Building small full-stack projects with classmates. I like helping beginners understand Java and want to explore machine learning beyond classroom examples.',
+    offered: [
+      { name: 'Java', proficiency: 'ADVANCED' as ProficiencyLevel, description: 'Classes, collections, debugging, and clean code basics' },
+      { name: 'Django', proficiency: 'INTERMEDIATE' as ProficiencyLevel, description: 'Models, views, forms, and simple deployment' },
+    ],
+    wanted: [
+      { name: 'Machine Learning', priority: 'HIGH' as PriorityLevel, notes: 'Build and evaluate a first end-to-end model' },
+      { name: 'Docker & Containers', priority: 'MEDIUM' as PriorityLevel, notes: 'Package project environments consistently' },
+    ],
+  },
+  {
+    name: 'Simran Gill', email: 'simran.gill@student.college.edu', password: 'Password123!',
+    department: 'Design & Architecture', semester: 6, rollNumber: '22DA013',
+    bio: 'I use 3D tools to explore public-space concepts and enjoy sharing workflows with studio peers. I am looking to make my visual projects easier to present and navigate.',
+    offered: [
+      { name: '3D Modeling & Blender', proficiency: 'EXPERT' as ProficiencyLevel, description: 'Modeling, lighting, materials, and architectural walkthroughs' },
+      { name: 'AutoCAD', proficiency: 'ADVANCED' as ProficiencyLevel, description: 'Precise plans, sections, and studio drawing standards' },
+    ],
+    wanted: [
+      { name: 'Figma', priority: 'HIGH' as PriorityLevel, notes: 'Create a polished portfolio prototype' },
+      { name: 'Video Editing', priority: 'MEDIUM' as PriorityLevel, notes: 'Edit a short project walkthrough' },
     ],
   },
 ];

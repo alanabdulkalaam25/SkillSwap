@@ -7,6 +7,7 @@ import { skillsRoutes } from './routes/skills';
 import { profileRoutes } from './routes/profile';
 import { studentsRoutes } from './routes/students';
 import { exchangesRoutes } from './routes/exchanges';
+import { adminRoutes } from './routes/admin';
 import { prisma } from './db';
 import './types';
 
@@ -39,6 +40,11 @@ export async function buildApp() {
         error: 'Unauthorized: Invalid or expired authentication token',
       });
     }
+    const user = await prisma.user.findUnique({ where: { id: request.user.id }, select: { id: true, role: true, isActive: true } });
+    if (!user || !user.isActive) {
+      return reply.status(403).send({ success: false, error: 'Account is suspended or unavailable' });
+    }
+    request.user.role = user.role;
   });
 
   // Base Health Endpoint
@@ -64,6 +70,9 @@ export async function buildApp() {
 
   // Register Skill Exchange Transaction Routes
   await app.register(exchangesRoutes, { prefix: '/api/exchanges' });
+
+  // College administration and moderation routes
+  await app.register(adminRoutes, { prefix: '/api/admin' });
 
   // Custom 404 handler
   app.setNotFoundHandler((request, reply) => {
