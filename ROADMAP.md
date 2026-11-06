@@ -115,7 +115,7 @@ A peer-to-peer student skill exchange and matching platform restricted to colleg
 
 ---
 
-### 📍 Phase 6: Seed Data, System-Wide Integration & Viva Script
+### 📍 Phase 6: Seed Data, System-Wide Integration
 **Goal:** 15–20 realistic mock student profiles, UI polish, and smooth viva presentation flow.
 
 - **Tasks:**
